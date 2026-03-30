@@ -156,18 +156,7 @@ export async function fetchSprints(
 
   // 3. Fallback générique
   console.warn(`[Jira] Aucun ticket trouvé dans le projet ${projectKey}`);
-  return [
-    {
-      id: "active",
-      name: "Sprint actif",
-      jql: `project = ${projectKey} AND sprint in openSprints() AND ${NO_SUBTASKS} ORDER BY rank ASC`,
-    },
-    {
-      id: "future",
-      name: "Prochain sprint",
-      jql: `project = ${projectKey} AND sprint in futureSprints() AND ${NO_SUBTASKS} ORDER BY rank ASC`,
-    },
-  ];
+  return [];
 }
 
 export async function fetchIssuesByJQL(
