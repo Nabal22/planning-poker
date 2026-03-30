@@ -251,7 +251,7 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
                 ticketIdx={room.currentTicketIdx}
                 totalTickets={room.tickets.length}
                 finalScore={room.finalScore}
-                onSendToJira={jiraEnabled ? handleSendToJira : undefined}
+                onSendToJira={jiraEnabled && !currentTicket?.key.startsWith("#") ? handleSendToJira : undefined}
                 sendingToJira={sendingToJira}
               />
             )}
