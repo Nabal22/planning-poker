@@ -181,6 +181,25 @@ export function loadTickets(roomId: string, tickets: JiraTicket[]): Room | null 
   return room;
 }
 
+export function addTicket(roomId: string, ticket: JiraTicket): Room | null {
+  const room = rooms.get(roomId);
+  if (!room) return null;
+  room.tickets.push(ticket);
+  room.lastActivityAt = Date.now();
+  return room;
+}
+
+export function removeTicket(roomId: string, ticketIdx: number): Room | null {
+  const room = rooms.get(roomId);
+  if (!room || ticketIdx < 0 || ticketIdx >= room.tickets.length) return null;
+  room.tickets.splice(ticketIdx, 1);
+  if (room.currentTicketIdx >= room.tickets.length) {
+    room.currentTicketIdx = Math.max(0, room.tickets.length - 1);
+  }
+  room.lastActivityAt = Date.now();
+  return room;
+}
+
 export function markTicketEstimated(roomId: string, ticketIdx: number, score: string): void {
   const room = rooms.get(roomId);
   if (!room || !room.tickets[ticketIdx]) return;

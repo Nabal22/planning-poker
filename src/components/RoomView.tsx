@@ -17,6 +17,7 @@ import { KonamiEasterEgg } from "./KonamiEasterEgg";
 import { CoinFlip } from "./CoinFlip";
 import { THEMES, type ThemeId } from "@/lib/themes";
 import type { JiraTicket } from "@/lib/types";
+import { getIssuesAction, estimateIssueAction } from "@/lib/actions/jira";
 
 interface Props {
   roomId: string;
@@ -124,6 +125,8 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
   const handleSelectTicket = (idx: number) => socket.emit("select-ticket", { roomId, ticketIdx: idx });
   const handleSetFinalScore = (score: string) => socket.emit("set-final-score", { roomId, score });
   const handleKick = (pid: string) => socket.emit("kick-player", { roomId, playerId: pid });
+  const handleAddTicket = (ticket: JiraTicket) => socket.emit("add-ticket", { roomId, ticket });
+  const handleRemoveTicket = (ticketIdx: number) => socket.emit("remove-ticket", { roomId, ticketIdx });
   const handleChangeTheme = (t: ThemeId) => {
     localStorage.setItem("poker-planning-theme", t);
     onChangeTheme(t);
@@ -140,17 +143,11 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
   const handleRefreshJira = async () => {
     if (!jiraJql || refreshingJira) return;
     setRefreshingJira(true);
-    try {
-      const res = await fetch(`/api/jira/issues?jql=${encodeURIComponent(jiraJql)}`);
-      const data = await res.json();
-      if (!Array.isArray(data)) throw new Error(data.error ?? "Erreur");
-      socket.emit("load-tickets", { roomId, tickets: data });
-      addToast(`${data.length} tickets actualisés`, "success");
-    } catch (e) {
-      addToast(e instanceof Error ? e.message : "Erreur Jira", "error");
-    } finally {
-      setRefreshingJira(false);
-    }
+    const res = await getIssuesAction(jiraJql);
+    setRefreshingJira(false);
+    if (res.error) { addToast(res.error, "error"); return; }
+    socket.emit("load-tickets", { roomId, tickets: res.data! as JiraTicket[] });
+    addToast(`${res.data!.length} tickets actualisés`, "success");
   };
 
   const handleSendToJira = async (score: string) => {
@@ -160,23 +157,14 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
     const numScore = parseFloat(score);
     if (isNaN(numScore)) return;
     setSendingToJira(true);
-    try {
-      const res = await fetch("/api/jira/estimate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ issueKey: ticket.key, points: numScore }),
-      });
-      if (!res.ok) throw new Error((await res.json()).error);
-      addToast(`${ticket.key} mis à jour dans Jira`, "success");
-      const updatedTickets = [...room.tickets];
-      updatedTickets[room.currentTicketIdx] = { ...ticket, estimatedPoints: score };
-      socket.emit("load-tickets", { roomId, tickets: updatedTickets });
-      setTimeout(() => socket.emit("next-ticket", { roomId }), 1500);
-    } catch (e) {
-      addToast(e instanceof Error ? e.message : "Erreur Jira", "error");
-    } finally {
-      setSendingToJira(false);
-    }
+    const res = await estimateIssueAction(ticket.key, numScore);
+    setSendingToJira(false);
+    if (res.error) { addToast(res.error, "error"); return; }
+    addToast(`${ticket.key} mis à jour dans Jira`, "success");
+    const updatedTickets = [...room.tickets];
+    updatedTickets[room.currentTicketIdx] = { ...ticket, estimatedPoints: score };
+    socket.emit("load-tickets", { roomId, tickets: updatedTickets });
+    setTimeout(() => socket.emit("next-ticket", { roomId }), 1500);
   };
 
   const copyLink = () => {
@@ -307,6 +295,8 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
               currentIdx={room.currentTicketIdx}
               isHost={isHost}
               onSelect={handleSelectTicket}
+              onAddTicket={handleAddTicket}
+              onRemoveTicket={handleRemoveTicket}
               onRefresh={jiraEnabled ? handleRefreshJira : undefined}
               refreshing={refreshingJira}
             />

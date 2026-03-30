@@ -93,6 +93,18 @@ export function initSocketServer(httpServer: HttpServer) {
       io!.to(roomId).emit("room-state", room);
     });
 
+    socket.on("add-ticket", ({ roomId, ticket }) => {
+      const room = rm.addTicket(roomId, ticket);
+      if (!room) return;
+      io!.to(roomId).emit("room-state", room);
+    });
+
+    socket.on("remove-ticket", ({ roomId, ticketIdx }) => {
+      const room = rm.removeTicket(roomId, ticketIdx);
+      if (!room) return;
+      io!.to(roomId).emit("room-state", room);
+    });
+
     socket.on("throw-paper", ({ roomId, fromId, toId }) => {
       io!.to(roomId).emit("paper-thrown", { fromId, toId });
     });

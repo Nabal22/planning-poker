@@ -2,50 +2,36 @@
 
 import { useState, useEffect } from "react";
 import type { JiraTicket } from "@/lib/types";
-
-interface Sprint {
-  id: string;
-  name: string;
-  jql: string;
-}
+import { getSprintsAction, getIssuesAction } from "@/lib/actions/jira";
+import type { JiraSprint } from "@/lib/jira";
 
 interface Props {
   onTicketsLoaded: (tickets: JiraTicket[], jql: string) => void;
 }
 
 export function JiraConnector({ onTicketsLoaded }: Props) {
-  const [sprints, setSprints] = useState<Sprint[]>([]);
-  const [selectedSprint, setSelectedSprint] = useState<Sprint | null>(null);
+  const [sprints, setSprints] = useState<JiraSprint[]>([]);
+  const [selectedSprint, setSelectedSprint] = useState<JiraSprint | null>(null);
   const [loading, setLoading] = useState<"sprints" | "tickets" | null>("sprints");
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("/api/jira/sprints")
-      .then((r) => r.json())
-      .then((data: Sprint[] | { error: string }) => {
-        if ("error" in data) throw new Error(data.error);
-        setSprints(data);
-        setSelectedSprint(data[0] ?? null);
-      })
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(null));
+    getSprintsAction().then((res) => {
+      if (res.error) { setError(res.error); return; }
+      setSprints(res.data!);
+      setSelectedSprint(res.data![0] ?? null);
+    }).finally(() => setLoading(null));
   }, []);
 
   async function handleLoad() {
     if (!selectedSprint) return;
     setLoading("tickets");
     setError("");
-    try {
-      const res = await fetch(`/api/jira/issues?jql=${encodeURIComponent(selectedSprint.jql)}`);
-      const data = await res.json();
-      if (!Array.isArray(data)) throw new Error(data.error ?? "Erreur inconnue");
-      if (data.length === 0) throw new Error("Aucun ticket trouvé dans ce sprint");
-      onTicketsLoaded(data, selectedSprint.jql);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erreur");
-    } finally {
-      setLoading(null);
-    }
+    const res = await getIssuesAction(selectedSprint.jql);
+    setLoading(null);
+    if (res.error) { setError(res.error); return; }
+    if (res.data!.length === 0) { setError("Aucun ticket trouvé dans ce sprint"); return; }
+    onTicketsLoaded(res.data! as JiraTicket[], selectedSprint.jql);
   }
 
   if (loading === "sprints") {
