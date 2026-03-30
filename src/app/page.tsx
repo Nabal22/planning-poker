@@ -60,8 +60,8 @@ export default function HomePage() {
       <div className="w-full max-w-md space-y-6">
         {/* Logo */}
         <div className="text-center space-y-2">
-          <img src="/logo.png" alt="Planning Poker" className="h-20 w-20 mx-auto rounded-2xl bg-gray-100/10 p-2" />
-          <h1 className="text-3xl font-bold text-white">Planning Poker</h1>
+          <img src="/logo.png" alt="Poker Planning" className="h-20 w-20 mx-auto rounded-2xl bg-gray-100/10 p-2" />
+          <h1 className="text-3xl font-bold text-white">Poker Planning</h1>
           <p className="text-gray-400 text-sm">Estimez vos tickets Jira en équipe</p>
         </div>
 
@@ -77,15 +77,15 @@ export default function HomePage() {
           />
         </div>
 
-        {/* Action buttons */}
-        {mode === null && (
+        {/* Actions */}
+        {mode !== "join" && (
           <div className="flex flex-col gap-3">
             <button
-              onClick={() => setMode("create")}
-              disabled={!name.trim()}
+              onClick={handleCreate}
+              disabled={loading || !name.trim()}
               className="w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white hover:bg-indigo-500 disabled:opacity-50 transition-colors"
             >
-              Créer une room
+              {loading ? "Création..." : "Créer une room"}
             </button>
             <button
               onClick={() => setMode("join")}
@@ -93,24 +93,6 @@ export default function HomePage() {
               className="w-full rounded-xl border border-gray-700 bg-gray-800 py-3 font-semibold text-gray-200 hover:border-indigo-400 hover:text-indigo-300 disabled:opacity-50 transition-colors"
             >
               Rejoindre une room
-            </button>
-          </div>
-        )}
-
-        {mode === "create" && (
-          <div className="space-y-3">
-            <button
-              onClick={handleCreate}
-              disabled={loading || !name.trim()}
-              className="w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white hover:bg-indigo-500 disabled:opacity-50 transition-colors"
-            >
-              {loading ? "Création..." : "Créer et rejoindre"}
-            </button>
-            <button
-              onClick={() => setMode(null)}
-              className="w-full text-sm text-gray-500 hover:text-gray-300"
-            >
-              ← Retour
             </button>
           </div>
         )}
@@ -124,6 +106,7 @@ export default function HomePage() {
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               maxLength={6}
               onKeyDown={(e) => e.key === "Enter" && handleJoin()}
+              autoFocus
             />
             <button
               onClick={handleJoin}
@@ -136,7 +119,7 @@ export default function HomePage() {
               onClick={() => setMode(null)}
               className="w-full text-sm text-gray-500 hover:text-gray-300"
             >
-              ← Retour
+              Retour
             </button>
           </div>
         )}

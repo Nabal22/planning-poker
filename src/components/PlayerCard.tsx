@@ -1,6 +1,7 @@
 "use client";
 
 import type { Player } from "@/lib/types";
+import { useTheme } from "./ThemeContext";
 
 interface Props {
   player: Player;
@@ -12,6 +13,8 @@ interface Props {
 }
 
 export function PlayerCard({ player, revealed, isCurrentPlayer, isHost, onKick, onThrow }: Props) {
+  const theme = useTheme();
+
   const initials = player.name
     .split(" ")
     .map((w) => w[0])
@@ -20,10 +23,10 @@ export function PlayerCard({ player, revealed, isCurrentPlayer, isHost, onKick, 
     .slice(0, 2);
 
   const cardColor = revealed && player.vote
-    ? "border-indigo-400 bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
+    ? theme.card.revealed
     : player.hasVoted
-      ? "border-green-500/60 bg-green-900/30 text-green-400"
-      : "border-gray-700 bg-gray-800/50 text-gray-600";
+      ? theme.card.voted
+      : theme.card.notVoted;
 
   return (
     <div
@@ -47,9 +50,7 @@ export function PlayerCard({ player, revealed, isCurrentPlayer, isHost, onKick, 
       {/* Avatar */}
       <div className="relative">
         <div className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold ring-2 transition-all ${
-          isCurrentPlayer
-            ? "bg-indigo-600 text-white ring-indigo-400"
-            : "bg-gray-700 text-gray-300 ring-gray-600"
+          isCurrentPlayer ? theme.avatar.self : theme.avatar.other
         }`}>
           {initials}
         </div>

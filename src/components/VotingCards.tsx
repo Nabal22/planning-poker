@@ -2,6 +2,7 @@
 
 import { SCALES } from "@/lib/types";
 import type { Scale } from "@/lib/types";
+import { useTheme } from "./ThemeContext";
 
 interface Props {
   scale: Scale;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function VotingCards({ scale, selectedValue, onVote, revealed, disabled }: Props) {
+  const theme = useTheme();
   const cards = SCALES[scale];
   const canVote = !disabled && !revealed;
 
@@ -32,10 +34,10 @@ export function VotingCards({ scale, selectedValue, onVote, revealed, disabled }
                 relative h-20 w-14 rounded-xl border-2 text-xl font-bold
                 transition-all duration-150 select-none
                 ${isSelected
-                  ? "border-indigo-400 bg-indigo-600 text-white -translate-y-2 shadow-xl shadow-indigo-500/40"
+                  ? theme.vote.selected
                   : canVote
-                    ? "border-gray-600 bg-gray-800/80 text-gray-200 hover:border-indigo-400/60 hover:bg-gray-700 hover:-translate-y-1 hover:shadow-lg cursor-pointer"
-                    : "border-gray-700 bg-gray-800/40 text-gray-600 cursor-not-allowed"
+                    ? theme.vote.idle
+                    : theme.vote.disabled
                 }
               `}
             >

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Press_Start_2P, VT323, Pixelify_Sans } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -7,8 +7,31 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+const pressStart2P = Press_Start_2P({
+  variable: "--font-pixel",
+  weight: "400",
+  subsets: ["latin"],
+});
+
+const vt323 = VT323({
+  variable: "--font-matrix",
+  weight: "400",
+  subsets: ["latin"],
+});
+
+const pixelifySans = Pixelify_Sans({
+  variable: "--font-doom",
+  subsets: ["latin"],
+});
+
+const xpFont = Inter({
+  variable: "--font-xp",
+  subsets: ["latin"],
+  weight: ["400", "700"],
+});
+
 export const metadata: Metadata = {
-  title: "Planning Poker",
+  title: "Poker Planning",
   description: "Estimez vos tickets Jira en équipe",
   icons: {
     icon: "/icon.png",
@@ -24,7 +47,7 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className={`${inter.variable} h-full antialiased dark`}
+      className={`${inter.variable} ${pressStart2P.variable} ${vt323.variable} ${pixelifySans.variable} ${xpFont.variable} h-full antialiased dark`}
     >
       <body className="min-h-full flex flex-col bg-gray-950 font-[family-name:var(--font-inter)]">{children}</body>
     </html>

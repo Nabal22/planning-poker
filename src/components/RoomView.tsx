@@ -11,6 +11,10 @@ import { ResultsPanel } from "./ResultsPanel";
 import { JiraConnector } from "./JiraConnector";
 import { Modal } from "./Modal";
 import { ToastContainer } from "./Toast";
+import { ThemeProvider, useTheme } from "./ThemeContext";
+import { ThemeSelector } from "./ThemeSelector";
+import { KonamiEasterEgg } from "./KonamiEasterEgg";
+import { THEMES, type ThemeId } from "@/lib/themes";
 import type { JiraTicket } from "@/lib/types";
 
 interface Props {
@@ -19,7 +23,8 @@ interface Props {
   savedPlayerId?: string;
 }
 
-export function RoomView({ roomId, playerName, savedPlayerId }: Props) {
+function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Props & { onChangeTheme: (t: ThemeId) => void }) {
+  const theme = useTheme();
   const { room, playerId, setRoom, setPlayerId, setPlayerName, addToast, updatePlayerVoted, revealVotes, resetVotes: storeResetVotes, addPlayer } = useRoomStore();
   const socketRef = useRef(connectSocket());
   const [myVote, setMyVote] = useState<string | null>(null);
@@ -29,18 +34,18 @@ export function RoomView({ roomId, playerName, savedPlayerId }: Props) {
   const [copied, setCopied] = useState(false);
   const [paperBalls, setPaperBalls] = useState<PaperBallAnim[]>([]);
   const paperBallIdRef = useRef(0);
-
-
   const socket = socketRef.current;
   const currentPlayerId = playerId || socket.id || "";
   const isHost = room?.host === currentPlayerId;
 
   useEffect(() => {
     setPlayerName(playerName);
-    const pid = savedPlayerId || socket.id || "";
-    setPlayerId(pid);
 
-    socket.emit("join-room", { roomId, playerName, playerId: savedPlayerId });
+    const joinRoom = () => {
+      const pid = savedPlayerId || socket.id || "";
+      setPlayerId(pid);
+      socket.emit("join-room", { roomId, playerName, playerId: savedPlayerId });
+    };
 
     socket.on("room-state", (r) => setRoom(r));
     socket.on("player-joined", (p) => {
@@ -58,13 +63,25 @@ export function RoomView({ roomId, playerName, savedPlayerId }: Props) {
       addToast("Vous avez été exclu de la room", "error");
       setTimeout(() => (window.location.href = "/"), 2000);
     });
-    socket.on("error", ({ message }) => addToast(message, "error"));
+    socket.on("error", ({ message }) => {
+      addToast(message, "error");
+      if (message === "Room not found or full") {
+        setTimeout(() => (window.location.href = "/"), 2000);
+      }
+    });
     socket.on("paper-thrown", ({ fromId, toId }) => spawnPaperBall(fromId, toId));
+
+    if (socket.connected) {
+      joinRoom();
+    } else {
+      socket.once("connect", joinRoom);
+    }
 
     return () => {
       socket.off("room-state"); socket.off("player-joined"); socket.off("player-left");
       socket.off("vote-received"); socket.off("votes-revealed"); socket.off("votes-reset");
       socket.off("kicked"); socket.off("error"); socket.off("paper-thrown");
+      socket.off("connect", joinRoom);
     };
   }, []);
 
@@ -103,6 +120,10 @@ export function RoomView({ roomId, playerName, savedPlayerId }: Props) {
   const handleSelectTicket = (idx: number) => socket.emit("select-ticket", { roomId, ticketIdx: idx });
   const handleSetFinalScore = (score: string) => socket.emit("set-final-score", { roomId, score });
   const handleKick = (pid: string) => socket.emit("kick-player", { roomId, playerId: pid });
+  const handleChangeTheme = (t: ThemeId) => {
+    localStorage.setItem("poker-planning-theme", t);
+    onChangeTheme(t);
+  };
 
   const handleTicketsLoaded = (tickets: JiraTicket[]) => {
     socket.emit("load-tickets", { roomId, tickets });
@@ -125,7 +146,7 @@ export function RoomView({ roomId, playerName, savedPlayerId }: Props) {
         body: JSON.stringify({ issueKey: ticket.key, points: numScore }),
       });
       if (!res.ok) throw new Error((await res.json()).error);
-      addToast(`✓ ${ticket.key} mis à jour dans Jira`, "success");
+      addToast(`${ticket.key} mis à jour dans Jira`, "success");
       const updatedTickets = [...room.tickets];
       updatedTickets[room.currentTicketIdx] = { ...ticket, estimatedPoints: score };
       socket.emit("load-tickets", { roomId, tickets: updatedTickets });
@@ -160,14 +181,14 @@ export function RoomView({ roomId, playerName, savedPlayerId }: Props) {
   const someVoted = room.players.some((p) => p.hasVoted);
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className={`min-h-screen ${theme.page} ${theme.font}`}>
       {/* Header */}
-      <header className="border-b border-gray-800/80 bg-gray-900/80 backdrop-blur-sm sticky top-0 z-10 px-4 py-3">
+      <header className={`border-b ${theme.headerBorder} ${theme.header} sticky top-0 z-10 px-4 py-3`}>
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <img src="/logo.png" alt="Logo" className="h-7 w-7" />
-              <span className="font-bold text-indigo-400">Planning Poker</span>
+              <span className={`font-bold ${theme.headerText}`}>Poker Planning</span>
             </div>
           </div>
 
@@ -175,26 +196,26 @@ export function RoomView({ roomId, playerName, savedPlayerId }: Props) {
             {isHost && (
               <button
                 onClick={() => setJiraModalOpen(true)}
-                className="flex items-center gap-2 rounded-lg border border-gray-700 bg-gray-800/50 hover:border-indigo-500/50 hover:bg-indigo-500/10 px-3 py-1.5 text-sm text-gray-300 hover:text-indigo-300 transition-all"
+                className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all ${theme.headerBtn}`}
               >
-                <span className="font-bold text-blue-400 text-xs">J</span>
+                <span className="font-bold text-xs">J</span>
                 {room.tickets.length > 0 ? `${room.tickets.length} tickets` : "Charger Jira"}
               </button>
             )}
             <button
               onClick={copyLink}
               title="Copier le lien d'invitation"
-              className="group inline-flex items-center gap-2 rounded-lg bg-gray-800/50 hover:bg-gray-700 px-3 py-1.5 transition-colors leading-none"
+              className={`group flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all ${theme.headerBtn}`}
             >
               {copied ? (
-                <span className="text-sm font-medium text-green-400">Lien copié !</span>
+                <span className="font-medium">Lien copié !</span>
               ) : (
                 <>
-                  <svg className="h-4 w-4 text-gray-400 group-hover:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="h-4 w-4 opacity-60 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                   </svg>
-                  <span className="text-sm leading-none text-gray-300 group-hover:text-white transition-colors">Inviter</span>
-                  <span className="font-mono text-sm leading-none text-gray-500">{roomId}</span>
+                  <span>Inviter</span>
+                  <span className="font-mono opacity-60">{roomId}</span>
                 </>
               )}
             </button>
@@ -250,7 +271,7 @@ export function RoomView({ roomId, playerName, savedPlayerId }: Props) {
                 <button
                   onClick={handleReveal}
                   disabled={!someVoted}
-                  className="rounded-xl bg-indigo-600 px-8 py-3 font-semibold text-white hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40"
+                  className={`rounded-xl px-8 py-3 font-semibold transition-all ${theme.accent} ${!someVoted ? theme.accentDisabled : ""}`}
                 >
                   {allVoted ? "Révéler les votes" : `Forcer la révélation (${room.players.filter((p) => p.hasVoted).length}/${connectedPlayers.length})`}
                 </button>
@@ -281,6 +302,35 @@ export function RoomView({ roomId, playerName, savedPlayerId }: Props) {
       </Modal>
 
       <ToastContainer />
+      <KonamiEasterEgg />
+
+      {/* Theme selector */}
+      <div className="fixed bottom-4 right-4 z-40">
+        <ThemeSelector current={theme.id} onChange={handleChangeTheme} />
+      </div>
     </div>
+  );
+}
+
+export function RoomView(props: Props) {
+  const [themeId, setThemeId] = useState<ThemeId>("openclimat");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("poker-planning-theme") as ThemeId | null;
+    if (saved && saved in THEMES) setThemeId(saved);
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "poker-planning-theme" && e.newValue && e.newValue in THEMES) {
+        setThemeId(e.newValue as ThemeId);
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  return (
+    <ThemeProvider themeId={themeId}>
+      <RoomViewInner {...props} onChangeTheme={setThemeId} />
+    </ThemeProvider>
   );
 }

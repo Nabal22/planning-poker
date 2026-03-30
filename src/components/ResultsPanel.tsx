@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import type { Room } from "@/lib/types";
 import { SCALES } from "@/lib/types";
+import { useTheme } from "./ThemeContext";
 
 interface Props {
   room: Room;
@@ -20,6 +21,8 @@ function toNumber(v: string | null | undefined): number | null {
 }
 
 export function ResultsPanel({ room, isHost, onSetFinalScore, onResetVotes, onNextTicket }: Props) {
+  const theme = useTheme();
+
   const votes = room.players
     .filter((p) => p.hasVoted && p.vote != null)
     .map((p) => p.vote as string);
@@ -47,7 +50,7 @@ export function ResultsPanel({ room, isHost, onSetFinalScore, onResetVotes, onNe
   const scaleValues = SCALES[room.scale];
 
   return (
-    <div className="rounded-2xl bg-gray-800/60 border border-gray-700/60 p-5 space-y-4">
+    <div className={`rounded-2xl p-5 space-y-4 ${theme.panel}`}>
       {/* Title */}
       <div className="flex items-center gap-2">
         <h3 className="font-semibold text-white">Résultats</h3>
@@ -55,8 +58,8 @@ export function ResultsPanel({ room, isHost, onSetFinalScore, onResetVotes, onNe
       </div>
 
       {isConsensus && (
-        <div className="rounded-xl bg-green-900/30 border border-green-700/50 p-3 text-center">
-          <span className="text-green-300 font-semibold">Consensus : {votes[0]}</span>
+        <div className={`rounded-xl p-3 text-center ${theme.consensus}`}>
+          <span className="font-semibold">Consensus : {votes[0]}</span>
         </div>
       )}
 
@@ -66,10 +69,10 @@ export function ResultsPanel({ room, isHost, onSetFinalScore, onResetVotes, onNe
           const pct = Math.round((count / votes.length) * 100);
           return (
             <div key={v} className="flex items-center gap-3">
-              <span className="w-7 text-right text-sm font-bold text-indigo-300 shrink-0">{v}</span>
+              <span className="w-7 text-right text-sm font-bold shrink-0">{v}</span>
               <div className="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
                 <div
-                  className="h-2 rounded-full bg-indigo-500 transition-all duration-500"
+                  className={`h-2 rounded-full transition-all duration-500 ${theme.distribution}`}
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -81,7 +84,7 @@ export function ResultsPanel({ room, isHost, onSetFinalScore, onResetVotes, onNe
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-4 gap-2 rounded-xl bg-gray-900/50 p-3">
+        <div className={`grid grid-cols-4 gap-2 rounded-xl p-3 ${theme.panelInner}`}>
           {[
             { label: "Moy", value: stats.avg },
             { label: "Méd", value: stats.median },
@@ -105,7 +108,7 @@ export function ResultsPanel({ room, isHost, onSetFinalScore, onResetVotes, onNe
               <button
                 key={v}
                 onClick={() => onSetFinalScore(v)}
-                className="h-10 w-10 rounded-xl border border-gray-600 bg-gray-700/80 text-sm font-bold text-white hover:border-indigo-400 hover:bg-indigo-700 transition-all hover:-translate-y-0.5"
+                className={`h-10 w-10 rounded-xl text-sm font-bold transition-all ${theme.scoreBtn} ${theme.scoreBtnHover}`}
               >
                 {v}
               </button>
@@ -115,7 +118,7 @@ export function ResultsPanel({ room, isHost, onSetFinalScore, onResetVotes, onNe
       )}
 
       {room.finalScore && (
-        <div className="rounded-xl bg-indigo-900/30 border border-indigo-700/50 p-3 text-center">
+        <div className={`rounded-xl p-3 text-center ${theme.finalScore}`}>
           <span className="text-gray-400 text-sm">Score final : </span>
           <span className="text-white font-bold text-xl">{room.finalScore}</span>
         </div>
@@ -126,14 +129,14 @@ export function ResultsPanel({ room, isHost, onSetFinalScore, onResetVotes, onNe
         <div className="flex gap-2 pt-1">
           <button
             onClick={onResetVotes}
-            className="flex-1 rounded-xl border border-gray-600 bg-gray-700/50 py-2.5 text-sm font-medium text-gray-300 hover:bg-gray-700 transition-colors"
+            className={`flex-1 rounded-xl py-2.5 text-sm font-medium transition-colors ${theme.secondaryBtn}`}
           >
             Re-voter
           </button>
           {room.tickets.length > 0 && room.currentTicketIdx < room.tickets.length - 1 && (
             <button
               onClick={onNextTicket}
-              className="flex-1 rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors"
+              className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors ${theme.accent}`}
             >
               Suivant →
             </button>

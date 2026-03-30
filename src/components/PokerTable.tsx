@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useCallback } from "react";
 import type { Room } from "@/lib/types";
+import { useTheme } from "./ThemeContext";
 import { PlayerCard } from "./PlayerCard";
 import { PaperBall } from "./PaperBall";
 
@@ -21,6 +21,7 @@ interface Props {
 }
 
 export function PokerTable({ room, currentPlayerId, onKick, onThrow, paperBalls, onPaperBallComplete }: Props) {
+  const theme = useTheme();
   const { players } = room;
   const isHost = room.host === currentPlayerId;
   const connected = players.filter((p) => p.connected);
@@ -50,19 +51,18 @@ export function PokerTable({ room, currentPlayerId, onKick, onThrow, paperBalls,
       </div>
 
       {/* Table felt */}
-      <div className="relative w-72 h-24 rounded-full bg-gradient-to-b from-emerald-800 to-emerald-900 border-4 border-emerald-700 shadow-2xl shadow-emerald-900/50 flex flex-col items-center justify-center gap-1">
-        {/* Progress arc */}
+      <div className={`relative w-72 h-24 rounded-full flex flex-col items-center justify-center gap-1 ${theme.table.felt}`}>
         {!room.revealed && total > 0 && (
           <div className="flex gap-1">
             {connected.map((p) => (
               <div
                 key={p.id}
-                className={`h-1.5 w-5 rounded-full transition-colors duration-300 ${p.hasVoted ? "bg-green-400" : "bg-emerald-700"}`}
+                className={`h-1.5 w-5 rounded-full transition-colors duration-300 ${p.hasVoted ? theme.table.progressOn : theme.table.progressOff}`}
               />
             ))}
           </div>
         )}
-        <span className={`text-sm font-medium ${room.revealed ? "text-emerald-200" : "text-emerald-400"}`}>
+        <span className={`text-sm font-medium ${room.revealed ? theme.table.textRevealed : theme.table.text}`}>
           {room.revealed ? "Votes révélés" : `${voted} / ${total} ont voté`}
         </span>
       </div>

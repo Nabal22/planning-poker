@@ -1,6 +1,7 @@
 "use client";
 
 import type { JiraTicket } from "@/lib/types";
+import { useTheme } from "./ThemeContext";
 
 interface Props {
   ticket: JiraTicket | null;
@@ -12,35 +13,36 @@ interface Props {
 }
 
 export function TicketDetail({ ticket, ticketIdx, totalTickets, finalScore, onSendToJira, sendingToJira }: Props) {
+  const theme = useTheme();
   if (!ticket) return null;
 
   const alreadySent = !!ticket.estimatedPoints;
 
   return (
-    <div className="rounded-2xl bg-gray-800/60 border border-gray-700/60 p-5 space-y-3">
+    <div className={`rounded-2xl p-5 space-y-3 ${theme.panel}`}>
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-mono text-xs font-bold text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded">
+            <span className={`font-mono text-xs font-bold px-2 py-0.5 rounded ${theme.finalScore}`}>
               {ticket.key}
             </span>
-            <span className="text-xs text-gray-500 bg-gray-700/60 px-2 py-0.5 rounded-full">
+            <span className={`text-xs px-2 py-0.5 rounded-full ${theme.panelInner}`}>
               {ticket.status}
             </span>
             {totalTickets > 1 && (
-              <span className="text-xs text-gray-600">
+              <span className="text-xs opacity-50">
                 {ticketIdx + 1} / {totalTickets}
               </span>
             )}
           </div>
-          <h2 className="text-white font-semibold leading-snug">{ticket.summary}</h2>
+          <h2 className="font-semibold leading-snug">{ticket.summary}</h2>
         </div>
 
         {ticket.currentPoints != null && (
           <div className="shrink-0 text-center">
-            <div className="text-[10px] text-gray-500 mb-0.5">Actuel</div>
-            <div className="h-9 w-9 rounded-lg bg-gray-700 border border-gray-600 flex items-center justify-center text-sm font-bold text-gray-300">
+            <div className="text-[10px] opacity-50 mb-0.5">Actuel</div>
+            <div className={`h-9 w-9 rounded-lg flex items-center justify-center text-sm font-bold ${theme.scoreBtn}`}>
               {ticket.currentPoints}
             </div>
           </div>
@@ -48,14 +50,14 @@ export function TicketDetail({ ticket, ticketIdx, totalTickets, finalScore, onSe
       </div>
 
       {ticket.description && (
-        <p className="text-xs text-gray-400 leading-relaxed line-clamp-2 border-t border-gray-700/50 pt-3">
+        <p className="text-xs opacity-60 leading-relaxed line-clamp-2 border-t border-current/10 pt-3">
           {ticket.description}
         </p>
       )}
 
       {ticket.assignee && (
-        <p className="text-xs text-gray-500 flex items-center gap-1.5">
-          <span className="h-4 w-4 rounded-full bg-gray-600 flex items-center justify-center text-[9px]">
+        <p className="text-xs opacity-50 flex items-center gap-1.5">
+          <span className={`h-4 w-4 rounded-full flex items-center justify-center text-[9px] ${theme.avatar.other}`}>
             {ticket.assignee[0]}
           </span>
           {ticket.assignee}
@@ -70,10 +72,10 @@ export function TicketDetail({ ticket, ticketIdx, totalTickets, finalScore, onSe
             disabled={alreadySent || sendingToJira}
             className={`w-full rounded-xl py-2.5 text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
               alreadySent
-                ? "bg-green-900/30 border border-green-700/50 text-green-400 cursor-not-allowed"
+                ? theme.consensus
                 : sendingToJira
-                  ? "bg-indigo-800/50 text-indigo-300 cursor-wait"
-                  : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20"
+                  ? `${theme.accent} opacity-60 cursor-wait`
+                  : theme.accent
             }`}
           >
             {alreadySent ? (
@@ -85,7 +87,7 @@ export function TicketDetail({ ticket, ticketIdx, totalTickets, finalScore, onSe
               </>
             ) : sendingToJira ? (
               <>
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-300 border-t-transparent" />
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                 Envoi en cours...
               </>
             ) : (
