@@ -232,7 +232,7 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-4 py-6">
+      <div className="mx-auto max-w-7xl px-4 py-6 pb-20 lg:pb-6">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
           {/* Main */}
           <div className="space-y-6">
@@ -319,7 +319,7 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
       <KonamiEasterEgg />
 
       {/* Theme selector */}
-      <div className="fixed bottom-4 right-4 z-40">
+      <div className="fixed bottom-4 right-4 z-40 opacity-40 hover:opacity-100 transition-opacity">
         <ThemeSelector current={theme.id} onChange={handleChangeTheme} />
       </div>
     </div>

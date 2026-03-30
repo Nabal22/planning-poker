@@ -13,7 +13,8 @@ export function ToastContainer() {
         <div
           key={t.id}
           onClick={() => removeToast(t.id)}
-          className={`cursor-pointer rounded-lg px-4 py-3 text-sm font-medium shadow-lg transition-all ${
+          style={{ animation: `${t.leaving ? "slideOutLeft" : "slideInLeft"} 0.25s ease forwards` }}
+          className={`cursor-pointer rounded-lg px-4 py-3 text-sm font-medium shadow-lg ${
             t.type === "success"
               ? "bg-green-600 text-white"
               : t.type === "error"

@@ -25,6 +25,7 @@ export function Modal({ open, onClose, title, children, size = "md" }: Props) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ animation: "fadeIn 0.2s ease forwards" }}
       onClick={onClose}
     >
       {/* Backdrop */}
@@ -33,6 +34,7 @@ export function Modal({ open, onClose, title, children, size = "md" }: Props) {
       {/* Panel */}
       <div
         className={`relative w-full ${widths[size]} rounded-2xl bg-gray-900 border border-gray-700 shadow-2xl`}
+        style={{ animation: "scaleIn 0.2s ease forwards" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

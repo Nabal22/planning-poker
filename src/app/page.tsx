@@ -11,7 +11,7 @@ export default function HomePage() {
   const { setPlayerId, setPlayerName } = useRoomStore();
   const [name, setName] = useState("");
   const [joinCode, setJoinCode] = useState("");
-  const [mode, setMode] = useState<"create" | "join" | null>(null);
+  const [mode, setMode] = useState<"create" | "join">("create");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -55,6 +55,8 @@ export default function HomePage() {
     router.push(`/room/${code}?name=${encodeURIComponent(name.trim())}`);
   }
 
+  const nameOk = name.trim().length > 0;
+
   return (
     <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
@@ -67,59 +69,77 @@ export default function HomePage() {
 
         {/* Name input */}
         <div>
-          <label className="block text-sm text-gray-400 mb-2">Votre pseudo</label>
+          <label htmlFor="pseudo" className="block text-sm text-gray-400 mb-2">Votre pseudo</label>
           <input
+            id="pseudo"
             className="w-full rounded-xl bg-gray-800 border border-gray-700 px-4 py-3 text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none transition-colors"
             placeholder="Ex: Alice"
             value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && mode === "join" && handleJoin()}
+            onChange={(e) => { setName(e.target.value); setError(""); }}
+            onKeyDown={(e) => e.key === "Enter" && mode === "join" ? handleJoin() : undefined}
           />
         </div>
 
-        {/* Actions */}
-        {mode !== "join" && (
-          <div className="flex flex-col gap-3">
-            <button
-              onClick={handleCreate}
-              disabled={loading || !name.trim()}
-              className="w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white hover:bg-indigo-500 disabled:opacity-50 transition-colors"
-            >
-              {loading ? "Création..." : "Créer une room"}
-            </button>
-            <button
-              onClick={() => setMode("join")}
-              disabled={!name.trim()}
-              className="w-full rounded-xl border border-gray-700 bg-gray-800 py-3 font-semibold text-gray-200 hover:border-indigo-400 hover:text-indigo-300 disabled:opacity-50 transition-colors"
-            >
-              Rejoindre une room
-            </button>
-          </div>
+        {/* Mode tabs */}
+        <div className="flex rounded-xl overflow-hidden border border-gray-700">
+          <button
+            onClick={() => { setMode("create"); setError(""); }}
+            className={`flex-1 py-3 text-sm font-semibold transition-colors ${
+              mode === "create"
+                ? "bg-indigo-600 text-white"
+                : "bg-gray-800 text-gray-400 hover:text-gray-200"
+            }`}
+          >
+            Créer une room
+          </button>
+          <button
+            onClick={() => { setMode("join"); setError(""); }}
+            disabled={!nameOk}
+            className={`flex-1 py-3 text-sm font-semibold transition-colors disabled:opacity-40 ${
+              mode === "join"
+                ? "bg-indigo-600 text-white"
+                : "bg-gray-800 text-gray-400 hover:text-gray-200"
+            }`}
+          >
+            Rejoindre une room
+          </button>
+        </div>
+
+        {/* Tab content */}
+        {mode === "create" && (
+          <button
+            onClick={handleCreate}
+            disabled={loading || !nameOk}
+            className="w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white hover:bg-indigo-500 disabled:opacity-50 transition-colors"
+          >
+            {loading ? "Création en cours…" : "Créer la room"}
+          </button>
         )}
 
         {mode === "join" && (
           <div className="space-y-3">
-            <input
-              className="w-full rounded-xl bg-gray-800 border border-gray-700 px-4 py-3 text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none font-mono text-center text-lg tracking-widest uppercase transition-colors"
-              placeholder="CODE"
-              value={joinCode}
-              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-              maxLength={6}
-              onKeyDown={(e) => e.key === "Enter" && handleJoin()}
-              autoFocus
-            />
+            <div>
+              <label htmlFor="code" className="block text-sm text-gray-400 mb-2">Code de la room</label>
+              <input
+                id="code"
+                className="w-full rounded-xl bg-gray-800 border border-gray-700 px-4 py-3 text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none font-mono text-center text-lg tracking-widest uppercase transition-colors"
+                placeholder="XXXXXX"
+                value={joinCode}
+                onChange={(e) => { setJoinCode(e.target.value.toUpperCase()); setError(""); }}
+                maxLength={6}
+                onKeyDown={(e) => e.key === "Enter" && handleJoin()}
+                autoFocus
+              />
+              {joinCode.length > 0 && joinCode.length < 4 && (
+                <p className="mt-1.5 text-xs text-gray-500 text-center">{joinCode.length}/6 caractères</p>
+              )}
+            </div>
             <button
               onClick={handleJoin}
-              disabled={!name.trim() || joinCode.length < 4}
+              disabled={!nameOk || joinCode.length < 4}
               className="w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white hover:bg-indigo-500 disabled:opacity-50 transition-colors"
             >
               Rejoindre
-            </button>
-            <button
-              onClick={() => setMode(null)}
-              className="w-full text-sm text-gray-500 hover:text-gray-300"
-            >
-              Retour
             </button>
           </div>
         )}

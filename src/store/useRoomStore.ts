@@ -25,6 +25,7 @@ export interface Toast {
   id: string;
   message: string;
   type: "info" | "success" | "error";
+  leaving?: boolean;
 }
 
 export const useRoomStore = create<RoomStore>((set, get) => ({
@@ -82,13 +83,21 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
   addToast: (message, type = "info") => {
     const id = Math.random().toString(36).slice(2);
     set((s) => ({ toasts: [...s.toasts, { id, message, type }] }));
+    // Start exit animation 250ms before actually removing
+    setTimeout(() => {
+      set((s) => ({ toasts: s.toasts.map((t) => t.id === id ? { ...t, leaving: true } : t) }));
+    }, 3750);
     setTimeout(() => {
       set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
     }, 4000);
   },
 
-  removeToast: (id) =>
-    set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
+  removeToast: (id) => {
+    set((s) => ({ toasts: s.toasts.map((t) => t.id === id ? { ...t, leaving: true } : t) }));
+    setTimeout(() => {
+      set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
+    }, 250);
+  },
 
   addPlayer: (player) => {
     const room = get().room;

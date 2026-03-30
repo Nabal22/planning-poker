@@ -24,6 +24,7 @@ export function CoinFlip({ roomId, playerName }: Props) {
 
   const expectedRef = useRef<"pile" | "face">("pile");
   const angleRef = useRef(0);
+  const localFlipPendingRef = useRef(false);
 
   const applyFlip = useCallback((isPile: boolean) => {
     const TAU = 2 * Math.PI;
@@ -43,6 +44,11 @@ export function CoinFlip({ roomId, playerName }: Props) {
   useEffect(() => {
     const socket = getSocket();
     const handler = ({ result: r, playerName: name }: { result: "pile" | "face"; playerName: string }) => {
+      // Ignore the socket echo of our own flip — we already animated locally
+      if (localFlipPendingRef.current) {
+        localFlipPendingRef.current = false;
+        return;
+      }
       expectedRef.current = r;
       setFlipperName(name);
       applyFlip(r === "pile");
@@ -58,7 +64,8 @@ export function CoinFlip({ roomId, playerName }: Props) {
     expectedRef.current = r;
     setFlipperName(playerName);
 
-    // Broadcast to room (server will re-emit to everyone including self)
+    // Broadcast to room (server will re-emit to everyone including self — mark pending to ignore echo)
+    localFlipPendingRef.current = true;
     const socket = getSocket();
     socket.emit("coin-flip", { roomId, result: r, playerName });
 
@@ -73,23 +80,8 @@ export function CoinFlip({ roomId, playerName }: Props) {
   return (
     <div className={`rounded-2xl overflow-hidden ${theme.panel}`}>
       {/* Label */}
-      <div className="px-4 pt-3 pb-1 flex items-center justify-between">
+      <div className="px-4 pt-3 pb-1">
         <span className="text-xs font-medium opacity-50 uppercase tracking-wide">Pile ou face</span>
-        {result && !isFlipping && (
-          <div className="flex items-center gap-1.5">
-            {flipperName && flipperName !== playerName && (
-              <span className="text-xs opacity-40">{flipperName} ·</span>
-            )}
-            <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ${theme.consensus}`}>
-              {result === "pile" ? "Pile !" : "Face !"}
-            </span>
-          </div>
-        )}
-        {isFlipping && (
-          <span className="text-xs opacity-40 animate-pulse">
-            {flipperName && flipperName !== playerName ? `${flipperName} lance…` : "En cours…"}
-          </span>
-        )}
       </div>
 
       {/* 3D coin */}
