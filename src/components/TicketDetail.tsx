@@ -66,39 +66,49 @@ export function TicketDetail({ ticket, ticketIdx, totalTickets, finalScore, onSe
 
       {/* Send to Jira */}
       {finalScore && onSendToJira && (
-        <div className="pt-1">
-          <button
-            onClick={() => !alreadySent && !sendingToJira && onSendToJira(finalScore)}
-            disabled={alreadySent || sendingToJira}
-            className={`w-full rounded-xl py-2.5 text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-              alreadySent
-                ? theme.consensus
-                : sendingToJira
-                  ? `${theme.accent} opacity-60 cursor-wait`
-                  : theme.accent
-            }`}
-          >
+        <div className={`rounded-xl border border-current/10 overflow-hidden mt-1`}>
+          <div className={`flex items-center justify-between px-4 py-3 ${theme.panelInner}`}>
+            {/* Score */}
+            <div className="flex items-center gap-3">
+              <div className={`h-10 w-10 rounded-lg flex items-center justify-center text-lg font-bold ${theme.finalScore}`}>
+                {finalScore}
+              </div>
+              <div>
+                <div className="text-xs font-semibold">Score final</div>
+                <div className="text-xs opacity-40">
+                  {alreadySent ? `Synchronisé · ${ticket.estimatedPoints} pts` : "Prêt à synchroniser"}
+                </div>
+              </div>
+            </div>
+
+            {/* Action */}
             {alreadySent ? (
-              <>
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+              <div className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg ${theme.consensus}`}>
+                <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
-                Envoyé dans Jira ({ticket.estimatedPoints} pts)
-              </>
-            ) : sendingToJira ? (
-              <>
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                Envoi en cours...
-              </>
+                Envoyé
+              </div>
             ) : (
-              <>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M7 16l-4-4m0 0l4-4m-4 4h18" />
-                </svg>
-                Envoyer {finalScore} pts → Jira
-              </>
+              <button
+                onClick={() => !sendingToJira && onSendToJira(finalScore)}
+                disabled={sendingToJira}
+                className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${theme.accent} ${sendingToJira ? "opacity-60 cursor-wait" : ""}`}
+              >
+                {sendingToJira ? (
+                  <>
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Envoi…
+                  </>
+                ) : (
+                  <>
+                    <span className="font-bold text-[11px] opacity-80">J</span>
+                    Envoyer vers Jira
+                  </>
+                )}
+              </button>
             )}
-          </button>
+          </div>
         </div>
       )}
     </div>
