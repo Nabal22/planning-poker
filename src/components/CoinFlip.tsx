@@ -58,11 +58,12 @@ export function CoinFlip() {
       </div>
 
       {/* 3D coin */}
-      <div className="bg-[#0c0c1a]" style={{ height: 200 }}>
+      <div style={{ height: 200 }}>
         <CoinCanvas
           targetAngle={targetAngle}
           onComplete={handleComplete}
-          onClick={flip}
+          onFlip={flip}
+          isFlipping={isFlipping}
         />
       </div>
 
