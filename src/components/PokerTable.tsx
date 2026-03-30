@@ -1,15 +1,26 @@
 "use client";
 
+import { useRef, useCallback } from "react";
 import type { Room } from "@/lib/types";
 import { PlayerCard } from "./PlayerCard";
+import { PaperBall } from "./PaperBall";
+
+interface PaperBallAnim {
+  id: number;
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+}
 
 interface Props {
   room: Room;
   currentPlayerId: string;
   onKick: (playerId: string) => void;
+  onThrow: (toId: string) => void;
+  paperBalls: PaperBallAnim[];
+  onPaperBallComplete: (id: number) => void;
 }
 
-export function PokerTable({ room, currentPlayerId, onKick }: Props) {
+export function PokerTable({ room, currentPlayerId, onKick, onThrow, paperBalls, onPaperBallComplete }: Props) {
   const { players } = room;
   const isHost = room.host === currentPlayerId;
   const connected = players.filter((p) => p.connected);
@@ -21,18 +32,20 @@ export function PokerTable({ room, currentPlayerId, onKick }: Props) {
   const bottomRow = players.slice(half);
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex flex-col items-center gap-6 relative">
       {/* Top row */}
       <div className="flex gap-6 justify-center min-h-[88px] items-end">
         {topRow.map((player) => (
-          <PlayerCard
-            key={player.id}
-            player={player}
-            revealed={room.revealed}
-            isCurrentPlayer={player.id === currentPlayerId}
-            isHost={isHost}
-            onKick={isHost && player.id !== currentPlayerId ? () => onKick(player.id) : undefined}
-          />
+          <div key={player.id} data-player-id={player.id}>
+            <PlayerCard
+              player={player}
+              revealed={room.revealed}
+              isCurrentPlayer={player.id === currentPlayerId}
+              isHost={isHost}
+              onKick={isHost && player.id !== currentPlayerId ? () => onKick(player.id) : undefined}
+              onThrow={player.id !== currentPlayerId && player.connected ? () => onThrow(player.id) : undefined}
+            />
+          </div>
         ))}
       </div>
 
@@ -57,16 +70,30 @@ export function PokerTable({ room, currentPlayerId, onKick }: Props) {
       {/* Bottom row */}
       <div className="flex gap-6 justify-center min-h-[88px] items-start">
         {bottomRow.map((player) => (
-          <PlayerCard
-            key={player.id}
-            player={player}
-            revealed={room.revealed}
-            isCurrentPlayer={player.id === currentPlayerId}
-            isHost={isHost}
-            onKick={isHost && player.id !== currentPlayerId ? () => onKick(player.id) : undefined}
-          />
+          <div key={player.id} data-player-id={player.id}>
+            <PlayerCard
+              player={player}
+              revealed={room.revealed}
+              isCurrentPlayer={player.id === currentPlayerId}
+              isHost={isHost}
+              onKick={isHost && player.id !== currentPlayerId ? () => onKick(player.id) : undefined}
+              onThrow={player.id !== currentPlayerId && player.connected ? () => onThrow(player.id) : undefined}
+            />
+          </div>
         ))}
       </div>
+
+      {/* Paper balls */}
+      {paperBalls.map((ball) => (
+        <PaperBall
+          key={ball.id}
+          from={ball.from}
+          to={ball.to}
+          onComplete={() => onPaperBallComplete(ball.id)}
+        />
+      ))}
     </div>
   );
 }
+
+export type { PaperBallAnim };

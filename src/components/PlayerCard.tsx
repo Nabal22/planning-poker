@@ -8,9 +8,10 @@ interface Props {
   isCurrentPlayer: boolean;
   isHost: boolean;
   onKick?: () => void;
+  onThrow?: () => void;
 }
 
-export function PlayerCard({ player, revealed, isCurrentPlayer, isHost, onKick }: Props) {
+export function PlayerCard({ player, revealed, isCurrentPlayer, isHost, onKick, onThrow }: Props) {
   const initials = player.name
     .split(" ")
     .map((w) => w[0])
@@ -25,7 +26,11 @@ export function PlayerCard({ player, revealed, isCurrentPlayer, isHost, onKick }
       : "border-gray-700 bg-gray-800/50 text-gray-600";
 
   return (
-    <div className={`group flex flex-col items-center gap-2 ${!player.connected ? "opacity-40" : ""}`}>
+    <div
+      className={`group flex flex-col items-center gap-2 ${!player.connected ? "opacity-40" : ""} ${onThrow ? "cursor-pointer" : ""}`}
+      onClick={onThrow}
+      title={onThrow ? `Lancer une boulette sur ${player.name}` : undefined}
+    >
       {/* Vote card */}
       <div className={`h-14 w-10 rounded-lg border-2 flex items-center justify-center text-sm font-bold transition-all duration-300 ${cardColor}`}>
         {revealed && player.vote ? (

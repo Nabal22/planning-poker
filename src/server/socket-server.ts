@@ -91,6 +91,10 @@ export function initSocketServer(httpServer: HttpServer) {
       io!.to(roomId).emit("room-state", room);
     });
 
+    socket.on("throw-paper", ({ roomId, fromId, toId }) => {
+      io!.to(roomId).emit("paper-thrown", { fromId, toId });
+    });
+
     socket.on("kick-player", ({ roomId, playerId: pid }) => {
       const target = rm.getRoom(roomId)?.players.find((p) => p.id === pid);
       const room = rm.kickPlayer(roomId, pid);

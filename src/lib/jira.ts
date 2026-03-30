@@ -14,6 +14,11 @@ export interface JiraIssue {
 }
 
 function getAuthHeader(apiToken: string, email: string) {
+  // If the token looks like an OAuth/granular token (starts with a known prefix),
+  // use Bearer auth. Otherwise, use Basic auth (classic API tokens).
+  if (apiToken.startsWith("ey") || apiToken.length > 200) {
+    return `Bearer ${apiToken}`;
+  }
   return `Basic ${Buffer.from(`${email}:${apiToken}`).toString("base64")}`;
 }
 
@@ -87,27 +92,37 @@ export async function fetchSprints(
   console.log(`[Jira] fetchSprints — project: ${projectKey}`);
   const result: JiraSprint[] = [];
 
-  // 1. Issues dans un sprint (hors sous-tâches)
-  const sprintIssues = await searchJQL(
+  // 1. Issues in active sprints
+  const activeIssues = await searchJQL(
     domain,
     email,
     apiToken,
-    `project = ${projectKey} AND sprint is not EMPTY AND ${NO_SUBTASKS} ORDER BY sprint ASC`,
+    `project = ${projectKey} AND sprint in openSprints() AND ${NO_SUBTASKS}`,
+    ["customfield_10020"],
+  );
+
+  // 2. Issues in future sprints
+  const futureIssues = await searchJQL(
+    domain,
+    email,
+    apiToken,
+    `project = ${projectKey} AND sprint in futureSprints() AND ${NO_SUBTASKS}`,
     ["customfield_10020"],
   );
 
   const seen = new Map<number, { name: string; state: string }>();
-  for (const issue of sprintIssues) {
+  for (const issue of [...activeIssues, ...futureIssues]) {
     for (const s of issue.fields.customfield_10020 ?? []) {
-      if (!seen.has(s.id)) seen.set(s.id, { name: s.name, state: s.state });
+      if (!seen.has(s.id) && s.state !== "closed") {
+        seen.set(s.id, { name: s.name, state: s.state });
+      }
     }
   }
 
-  console.log(`[Jira] Distinct sprints found: ${seen.size}`);
+  console.log(`[Jira] Distinct active/future sprints found: ${seen.size}`);
   seen.forEach((s, id) => console.log(`[Jira]   sprint id=${id} name="${s.name}" state=${s.state}`));
 
   for (const [id, s] of seen.entries()) {
-    if (s.state === "closed") continue;
     result.push({
       id: String(id),
       name: `${s.name}${s.state === "active" ? " (actif)" : ""}`,

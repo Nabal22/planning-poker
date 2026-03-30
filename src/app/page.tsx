@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { connectSocket } from "@/lib/socket";
 import { useRoomStore } from "@/store/useRoomStore";
 
 export default function HomePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { setPlayerId, setPlayerName } = useRoomStore();
   const [name, setName] = useState("");
   const [joinCode, setJoinCode] = useState("");
@@ -17,7 +18,13 @@ export default function HomePage() {
   useEffect(() => {
     const saved = localStorage.getItem("planning-poker-player-name");
     if (saved) setName(saved);
-  }, []);
+
+    const roomFromUrl = searchParams.get("room");
+    if (roomFromUrl) {
+      setJoinCode(roomFromUrl.toUpperCase());
+      setMode("join");
+    }
+  }, [searchParams]);
 
   function handleCreate() {
     if (!name.trim()) return;
@@ -53,7 +60,7 @@ export default function HomePage() {
       <div className="w-full max-w-md space-y-6">
         {/* Logo */}
         <div className="text-center space-y-2">
-          <div className="text-5xl">🃏</div>
+          <img src="/logo.png" alt="Planning Poker" className="h-20 w-20 mx-auto rounded-2xl bg-gray-100/10 p-2" />
           <h1 className="text-3xl font-bold text-white">Planning Poker</h1>
           <p className="text-gray-400 text-sm">Estimez vos tickets Jira en équipe</p>
         </div>

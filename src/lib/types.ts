@@ -50,6 +50,7 @@ export type ClientToServerEvents = {
   "change-scale": (data: { roomId: string; scale: Scale }) => void;
   "load-tickets": (data: { roomId: string; tickets: JiraTicket[] }) => void;
   "kick-player": (data: { roomId: string; playerId: string }) => void;
+  "throw-paper": (data: { roomId: string; fromId: string; toId: string }) => void;
 };
 
 export type ServerToClientEvents = {
@@ -61,4 +62,5 @@ export type ServerToClientEvents = {
   "votes-reset": () => void;
   kicked: () => void;
   error: (data: { message: string }) => void;
+  "paper-thrown": (data: { fromId: string; toId: string }) => void;
 };

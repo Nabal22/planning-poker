@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRoomStore } from "@/store/useRoomStore";
 import { connectSocket } from "@/lib/socket";
-import { PokerTable } from "./PokerTable";
+import { PokerTable, type PaperBallAnim } from "./PokerTable";
 import { VotingCards } from "./VotingCards";
 import { TicketPanel } from "./TicketPanel";
 import { TicketDetail } from "./TicketDetail";
@@ -27,6 +27,8 @@ export function RoomView({ roomId, playerName, savedPlayerId }: Props) {
   const [sendingToJira, setSendingToJira] = useState(false);
   const [jiraModalOpen, setJiraModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [paperBalls, setPaperBalls] = useState<PaperBallAnim[]>([]);
+  const paperBallIdRef = useRef(0);
 
 
   const socket = socketRef.current;
@@ -57,12 +59,36 @@ export function RoomView({ roomId, playerName, savedPlayerId }: Props) {
       setTimeout(() => (window.location.href = "/"), 2000);
     });
     socket.on("error", ({ message }) => addToast(message, "error"));
+    socket.on("paper-thrown", ({ fromId, toId }) => spawnPaperBall(fromId, toId));
 
     return () => {
       socket.off("room-state"); socket.off("player-joined"); socket.off("player-left");
       socket.off("vote-received"); socket.off("votes-revealed"); socket.off("votes-reset");
-      socket.off("kicked"); socket.off("error");
+      socket.off("kicked"); socket.off("error"); socket.off("paper-thrown");
     };
+  }, []);
+
+  const getPlayerCenter = useCallback((pid: string) => {
+    const el = document.querySelector(`[data-player-id="${pid}"]`);
+    if (!el) return null;
+    const rect = el.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  }, []);
+
+  const spawnPaperBall = useCallback((fromId: string, toId: string) => {
+    const from = getPlayerCenter(fromId);
+    const to = getPlayerCenter(toId);
+    if (!from || !to) return;
+    const id = ++paperBallIdRef.current;
+    setPaperBalls((prev) => [...prev, { id, from, to }]);
+  }, [getPlayerCenter]);
+
+  const handleThrow = useCallback((toId: string) => {
+    socket.emit("throw-paper", { roomId, fromId: currentPlayerId, toId });
+  }, [roomId, currentPlayerId]);
+
+  const handlePaperBallComplete = useCallback((id: number) => {
+    setPaperBalls((prev) => prev.filter((b) => b.id !== id));
   }, []);
 
   const handleVote = useCallback((value: string) => {
@@ -139,21 +165,10 @@ export function RoomView({ roomId, playerName, savedPlayerId }: Props) {
       <header className="border-b border-gray-800/80 bg-gray-900/80 backdrop-blur-sm sticky top-0 z-10 px-4 py-3">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="font-bold text-indigo-400">🃏 Planning Poker</span>
-            <button
-              onClick={copyLink}
-              title="Copier le lien d'invitation"
-              className="group flex items-center gap-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 px-3 py-1.5 transition-colors"
-            >
-              <span className="font-mono text-sm font-bold text-gray-300 group-hover:text-white transition-colors">
-                {copied ? "✓ Copié !" : roomId}
-              </span>
-              {!copied && (
-                <svg className="h-3.5 w-3.5 text-gray-500 group-hover:text-gray-300 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-              )}
-            </button>
+            <div className="flex items-center gap-2">
+              <img src="/logo.png" alt="Logo" className="h-7 w-7" />
+              <span className="font-bold text-indigo-400">Planning Poker</span>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -166,10 +181,23 @@ export function RoomView({ roomId, playerName, savedPlayerId }: Props) {
                 {room.tickets.length > 0 ? `${room.tickets.length} tickets` : "Charger Jira"}
               </button>
             )}
-            <div className="flex items-center gap-1.5 rounded-lg bg-gray-800/50 px-3 py-1.5">
-              <span className="h-2 w-2 rounded-full bg-green-400" />
-              <span className="text-xs text-gray-400">{connectedPlayers.length} en ligne</span>
-            </div>
+            <button
+              onClick={copyLink}
+              title="Copier le lien d'invitation"
+              className="group inline-flex items-center gap-2 rounded-lg bg-gray-800/50 hover:bg-gray-700 px-3 py-1.5 transition-colors leading-none"
+            >
+              {copied ? (
+                <span className="text-sm font-medium text-green-400">Lien copié !</span>
+              ) : (
+                <>
+                  <svg className="h-4 w-4 text-gray-400 group-hover:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                  <span className="text-sm leading-none text-gray-300 group-hover:text-white transition-colors">Inviter</span>
+                  <span className="font-mono text-sm leading-none text-gray-500">{roomId}</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
       </header>
@@ -178,7 +206,14 @@ export function RoomView({ roomId, playerName, savedPlayerId }: Props) {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
           {/* Main */}
           <div className="space-y-6">
-            <PokerTable room={room} currentPlayerId={currentPlayerId} onKick={handleKick} />
+            <PokerTable
+              room={room}
+              currentPlayerId={currentPlayerId}
+              onKick={handleKick}
+              onThrow={handleThrow}
+              paperBalls={paperBalls}
+              onPaperBallComplete={handlePaperBallComplete}
+            />
 
             {currentTicket && (
               <TicketDetail
