@@ -76,11 +76,9 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
     });
     socket.on("paper-thrown", ({ fromId, toId }) => spawnPaperBall(fromId, toId));
 
-    if (socket.connected) {
-      joinRoom();
-    } else {
-      socket.once("connect", joinRoom);
-    }
+    // Re-join the room on every (re)connect — handles both first connect and auto-reconnects
+    socket.on("connect", joinRoom);
+    if (socket.connected) joinRoom();
 
     return () => {
       socket.off("room-state"); socket.off("player-joined"); socket.off("player-left");

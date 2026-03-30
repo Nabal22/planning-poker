@@ -16,6 +16,12 @@ export function initSocketServer(httpServer: HttpServer) {
     path: "/api/socket",
   });
 
+  // Maps to handle reconnect race conditions
+  // socketId → logical player id (stable across reconnects)
+  const socketToLogical = new Map<string, string>();
+  // logical player id → current active socket id
+  const logicalToSocket = new Map<string, string>();
+
   io.on("connection", (socket) => {
     const playerId = socket.id;
 
@@ -27,6 +33,9 @@ export function initSocketServer(httpServer: HttpServer) {
 
     socket.on("join-room", ({ roomId, playerName, playerId: savedId }) => {
       const effectiveId = savedId || playerId;
+      // Track which logical player this socket represents
+      socketToLogical.set(socket.id, effectiveId);
+      logicalToSocket.set(effectiveId, socket.id);
       const result = rm.joinRoom(roomId, effectiveId, playerName);
       if (!result) {
         socket.emit("error", { message: "Room not found or full" });
@@ -124,11 +133,21 @@ export function initSocketServer(httpServer: HttpServer) {
     });
 
     socket.on("disconnect", () => {
-      const room = rm.playerDisconnect(playerId);
+      const logicalId = socketToLogical.get(socket.id) ?? socket.id;
+      socketToLogical.delete(socket.id);
+
+      // Only disconnect the player if this socket is still their active one.
+      // If the player already reconnected with a new socket, ignore this stale disconnect
+      // (prevents race condition: new socket reconnects before old one finishes disconnecting).
+      const activeSocket = logicalToSocket.get(logicalId);
+      if (activeSocket && activeSocket !== socket.id) return;
+
+      logicalToSocket.delete(logicalId);
+      const room = rm.playerDisconnect(logicalId);
       if (room) {
         io!.to(room.id).emit("player-left", {
-          playerId,
-          name: room.players.find((p) => p.id === playerId)?.name || "",
+          playerId: logicalId,
+          name: room.players.find((p) => p.id === logicalId)?.name || "",
         });
         io!.to(room.id).emit("room-state", room);
       }
