@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Image from "next/image";
 import type { Room, JiraTicket } from "@/lib/types";
 import { SCALES } from "@/lib/types";
 import { useTheme } from "./ThemeContext";
@@ -146,7 +147,7 @@ return (
               ) : (
                 <div className="flex items-center gap-1.5">
                   <span>Envoyer vers Jira</span>
-                  <img src="/jira.svg" className="h-3.5 w-3.5" alt="Jira" />
+                  <Image src="/jira.svg" width={14} height={14} className="h-3.5 w-3.5" alt="Jira" />
                 </div>
               )}
             </button>

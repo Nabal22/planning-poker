@@ -18,6 +18,7 @@ import { CoinFlip } from "./CoinFlip";
 import { THEMES, type ThemeId } from "@/lib/themes";
 import type { JiraTicket } from "@/lib/types";
 import { getIssuesAction, estimateIssueAction } from "@/lib/actions/jira";
+import Image from "next/image";
 
 interface Props {
   roomId: string;
@@ -28,7 +29,7 @@ interface Props {
 function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Props & { onChangeTheme: (t: ThemeId) => void }) {
   const theme = useTheme();
   const { room, playerId, setRoom, setPlayerId, setPlayerName, addToast, updatePlayerVoted, revealVotes, resetVotes: storeResetVotes, addPlayer } = useRoomStore();
-  const socketRef = useRef(connectSocket());
+  const [socket] = useState(() => connectSocket());
   const [myVote, setMyVote] = useState<string | null>(null);
   const [jiraEnabled, setJiraEnabled] = useState(false);
   const [jiraJql, setJiraJql] = useState<string | null>(null);
@@ -38,9 +39,23 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
   const [copied, setCopied] = useState(false);
   const [paperBalls, setPaperBalls] = useState<PaperBallAnim[]>([]);
   const paperBallIdRef = useRef(0);
-  const socket = socketRef.current;
   const currentPlayerId = playerId || socket.id || "";
   const isHost = room?.host === currentPlayerId;
+
+  const getPlayerCenter = useCallback((pid: string) => {
+    const el = document.querySelector(`[data-player-id="${pid}"]`);
+    if (!el) return null;
+    const rect = el.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  }, []);
+
+  const spawnPaperBall = useCallback((fromId: string, toId: string) => {
+    const from = getPlayerCenter(fromId);
+    const to = getPlayerCenter(toId);
+    if (!from || !to) return;
+    const id = ++paperBallIdRef.current;
+    setPaperBalls((prev) => [...prev, { id, from, to }]);
+  }, [getPlayerCenter]);
 
   useEffect(() => {
     setPlayerName(playerName);
@@ -86,26 +101,11 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
       socket.off("kicked"); socket.off("error"); socket.off("paper-thrown");
       socket.off("connect", joinRoom);
     };
-  }, []);
-
-  const getPlayerCenter = useCallback((pid: string) => {
-    const el = document.querySelector(`[data-player-id="${pid}"]`);
-    if (!el) return null;
-    const rect = el.getBoundingClientRect();
-    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-  }, []);
-
-  const spawnPaperBall = useCallback((fromId: string, toId: string) => {
-    const from = getPlayerCenter(fromId);
-    const to = getPlayerCenter(toId);
-    if (!from || !to) return;
-    const id = ++paperBallIdRef.current;
-    setPaperBalls((prev) => [...prev, { id, from, to }]);
-  }, [getPlayerCenter]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- mount-only: socket listeners registered once
 
   const handleThrow = useCallback((toId: string) => {
     socket.emit("throw-paper", { roomId, fromId: currentPlayerId, toId });
-  }, [roomId, currentPlayerId]);
+  }, [socket, roomId, currentPlayerId]);
 
   const handlePaperBallComplete = useCallback((id: number) => {
     setPaperBalls((prev) => prev.filter((b) => b.id !== id));
@@ -115,7 +115,7 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
     if (!room) return;
     setMyVote(value);
     socket.emit("vote", { roomId, playerId: currentPlayerId, value });
-  }, [room, roomId, currentPlayerId]);
+  }, [socket, room, roomId, currentPlayerId]);
 
   const handleReveal = () => socket.emit("reveal", { roomId });
   const handleReset = () => { setMyVote(null); socket.emit("reset-votes", { roomId }); };
@@ -194,7 +194,7 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="Logo" className="h-7 w-7" />
+              <Image src="/logo.png" alt="Logo" width={28} height={28} className="h-7 w-7" />
               <span className={`font-bold ${theme.headerText}`}>Poker Planning</span>
             </div>
           </div>
@@ -205,7 +205,7 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
                 onClick={() => setJiraModalOpen(true)}
                 className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all ${theme.headerBtn}`}
               >
-                <img src="/jira.svg" className="h-4 w-4" alt="Jira" />
+                <Image src="/jira.svg" width={16} height={16} className="h-4 w-4" alt="Jira" />
                 Charger Jira
               </button>
             )}
@@ -329,7 +329,7 @@ export function RoomView(props: Props) {
 
   useEffect(() => {
     const saved = localStorage.getItem("poker-planning-theme") as ThemeId | null;
-    if (saved && saved in THEMES) setThemeId(saved);
+    if (saved && saved in THEMES) setThemeId(saved); // eslint-disable-line react-hooks/set-state-in-effect -- localStorage read on mount
 
     const onStorage = (e: StorageEvent) => {
       if (e.key === "poker-planning-theme" && e.newValue && e.newValue in THEMES) {

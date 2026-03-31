@@ -42,7 +42,6 @@ export function PokerTable({ room, currentPlayerId, onKick, onThrow, paperBalls,
               player={player}
               revealed={room.revealed}
               isCurrentPlayer={player.id === currentPlayerId}
-              isHost={isHost}
               onKick={isHost && player.id !== currentPlayerId ? () => onKick(player.id) : undefined}
               onThrow={player.id !== currentPlayerId && player.connected ? () => onThrow(player.id) : undefined}
             />
@@ -75,7 +74,6 @@ export function PokerTable({ room, currentPlayerId, onKick, onThrow, paperBalls,
               player={player}
               revealed={room.revealed}
               isCurrentPlayer={player.id === currentPlayerId}
-              isHost={isHost}
               onKick={isHost && player.id !== currentPlayerId ? () => onKick(player.id) : undefined}
               onThrow={player.id !== currentPlayerId && player.connected ? () => onThrow(player.id) : undefined}
             />

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { connectSocket } from "@/lib/socket";
 import { useRoomStore } from "@/store/useRoomStore";
 
@@ -10,21 +11,20 @@ export default function HomePage() {
   const searchParams = useSearchParams();
   const { setPlayerId, setPlayerName } = useRoomStore();
   const [name, setName] = useState("");
-  const [joinCode, setJoinCode] = useState("");
-  const [mode, setMode] = useState<"create" | "join">("create");
+  const [joinCode, setJoinCode] = useState(() => {
+    const room = searchParams.get("room");
+    return room ? room.toUpperCase() : "";
+  });
+  const [mode, setMode] = useState<"create" | "join">(() =>
+    searchParams.get("room") ? "join" : "create"
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const saved = localStorage.getItem("planning-poker-player-name");
-    if (saved) setName(saved);
-
-    const roomFromUrl = searchParams.get("room");
-    if (roomFromUrl) {
-      setJoinCode(roomFromUrl.toUpperCase());
-      setMode("join");
-    }
-  }, [searchParams]);
+    if (saved) setName(saved); // eslint-disable-line react-hooks/set-state-in-effect -- localStorage read on mount
+  }, []);
 
   function handleCreate() {
     if (!name.trim()) return;
@@ -62,7 +62,7 @@ export default function HomePage() {
       <div className="w-full max-w-md space-y-6">
         {/* Logo */}
         <div className="text-center space-y-2">
-          <img src="/logo.png" alt="Poker Planning" className="h-20 w-20 mx-auto rounded-2xl bg-gray-100/10 p-2" />
+          <Image src="/logo.png" alt="Poker Planning" width={80} height={80} className="h-20 w-20 mx-auto rounded-2xl bg-gray-100/10 p-2" />
           <h1 className="text-3xl font-bold text-white">Poker Planning</h1>
           <p className="text-gray-400 text-sm">Estimez vos tickets Jira en équipe</p>
         </div>

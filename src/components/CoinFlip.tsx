@@ -19,7 +19,6 @@ export function CoinFlip({ roomId, playerName }: Props) {
   const theme = useTheme();
   const [isFlipping, setIsFlipping] = useState(false);
   const [result, setResult] = useState<"pile" | "face" | null>(null);
-  const [flipperName, setFlipperName] = useState<string | null>(null);
   const [targetAngle, setTargetAngle] = useState(0);
 
   const expectedRef = useRef<"pile" | "face">("pile");
@@ -43,14 +42,13 @@ export function CoinFlip({ roomId, playerName }: Props) {
   // Listen for flips from other players
   useEffect(() => {
     const socket = getSocket();
-    const handler = ({ result: r, playerName: name }: { result: "pile" | "face"; playerName: string }) => {
+    const handler = ({ result: r }: { result: "pile" | "face"; playerName: string }) => {
       // Ignore the socket echo of our own flip — we already animated locally
       if (localFlipPendingRef.current) {
         localFlipPendingRef.current = false;
         return;
       }
       expectedRef.current = r;
-      setFlipperName(name);
       applyFlip(r === "pile");
     };
     socket.on("coin-flipped", handler);
@@ -62,7 +60,6 @@ export function CoinFlip({ roomId, playerName }: Props) {
     const isPile = Math.random() < 0.5;
     const r = isPile ? "pile" : "face";
     expectedRef.current = r;
-    setFlipperName(playerName);
 
     // Broadcast to room (server will re-emit to everyone including self — mark pending to ignore echo)
     localFlipPendingRef.current = true;

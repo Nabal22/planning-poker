@@ -7,12 +7,11 @@ interface Props {
   player: Player;
   revealed: boolean;
   isCurrentPlayer: boolean;
-  isHost: boolean;
   onKick?: () => void;
   onThrow?: () => void;
 }
 
-export function PlayerCard({ player, revealed, isCurrentPlayer, isHost, onKick, onThrow }: Props) {
+export function PlayerCard({ player, revealed, isCurrentPlayer, onKick, onThrow }: Props) {
   const theme = useTheme();
 
   const initials = player.name

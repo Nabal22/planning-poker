@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 interface Props {
   from: { x: number; y: number };
@@ -45,7 +46,7 @@ export function PaperBall({ from, to, onComplete }: Props) {
         transform: `translate(-50%, -50%) rotate(${rotation}deg) scale(${scale})`,
       }}
     >
-      <img src="/paper-ball.png" alt="" className="h-8 w-8 drop-shadow-lg" draggable={false} />
+      <Image src="/paper-ball.png" alt="" width={32} height={32} className="h-8 w-8 drop-shadow-lg" draggable={false} />
     </div>
   );
 }

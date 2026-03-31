@@ -27,7 +27,7 @@ export default function RoomPageClient({ paramsPromise }: Props) {
       return;
     }
 
-    setPlayerName(name);
+    setPlayerName(name); // eslint-disable-line react-hooks/set-state-in-effect -- localStorage read on mount
     if (pidFromStorage) setSavedPlayerId(pidFromStorage);
 
     if (nameFromQuery) {

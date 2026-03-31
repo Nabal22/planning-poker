@@ -66,7 +66,7 @@ function DraggableGroup({
 
   useEffect(() => {
     const el = gl.domElement;
-    el.style.cursor = "grab";
+    el.style.cursor = "grab"; // eslint-disable-line react-hooks/immutability -- DOM side-effect is intentional
 
     const onDown = (e: PointerEvent) => {
       drag.current = {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 
 const KONAMI = [
   "ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown",
@@ -26,19 +26,7 @@ export function KonamiEasterEgg() {
   const seqRef = useRef<string[]>([]);
   const idRef = useRef(0);
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      seqRef.current = [...seqRef.current, e.key].slice(-KONAMI.length);
-      if (seqRef.current.join(",") === KONAMI.join(",")) {
-        seqRef.current = [];
-        trigger();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
-
-  function trigger() {
+  const trigger = useCallback(() => {
     setActive(true);
     const newCards: FallingCard[] = [];
     for (let i = 0; i < 40; i++) {
@@ -54,7 +42,19 @@ export function KonamiEasterEgg() {
     }
     setCards(newCards);
     setTimeout(() => { setActive(false); setCards([]); }, 6000);
-  }
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      seqRef.current = [...seqRef.current, e.key].slice(-KONAMI.length);
+      if (seqRef.current.join(",") === KONAMI.join(",")) {
+        seqRef.current = [];
+        trigger();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [trigger]);
 
   if (!active) return null;
 
