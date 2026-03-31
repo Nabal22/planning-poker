@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useSyncExternalStore } from "react";
 import { useRoomStore } from "@/store/useRoomStore";
 import { connectSocket } from "@/lib/socket";
 import { PokerTable, type PaperBallAnim } from "./PokerTable";
@@ -14,6 +14,7 @@ import { ToastContainer } from "./Toast";
 import { ThemeProvider, useTheme } from "./ThemeContext";
 import { ThemeSelector } from "./ThemeSelector";
 import { KonamiEasterEgg } from "./KonamiEasterEgg";
+import { FallingCardsOverlay, useFallingCards } from "./FallingCardsOverlay";
 import { CoinFlip } from "./CoinFlip";
 import { THEMES, type ThemeId } from "@/lib/themes";
 import type { JiraTicket } from "@/lib/types";
@@ -39,6 +40,7 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
   const [copied, setCopied] = useState(false);
   const [paperBalls, setPaperBalls] = useState<PaperBallAnim[]>([]);
   const paperBallIdRef = useRef(0);
+  const { active: celebrationActive, cards: celebrationCards, trigger: triggerCelebration } = useFallingCards();
   const currentPlayerId = playerId || socket.id || "";
   const isHost = room?.host === currentPlayerId;
 
@@ -76,7 +78,14 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
     socket.on("vote-received", ({ playerId: pid }) => updatePlayerVoted(pid));
     socket.on("votes-revealed", ({ votes }) => {
       revealVotes(votes);
-      addToast("Votes révélés !", "info");
+      const voteValues = Object.values(votes as Record<string, string>).filter(Boolean);
+      const isConsensus = voteValues.length > 1 && new Set(voteValues).size === 1;
+      if (isConsensus) {
+        triggerCelebration();
+        addToast(`Consensus : ${voteValues[0]} !`, "info");
+      } else {
+        addToast("Votes révélés !", "info");
+      }
     });
     socket.on("votes-reset", () => { storeResetVotes(); setMyVote(null); });
     socket.on("kicked", () => {
@@ -101,7 +110,7 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
       socket.off("kicked"); socket.off("error"); socket.off("paper-thrown");
       socket.off("connect", joinRoom);
     };
-  }, [socket, roomId, playerName, savedPlayerId, setPlayerName, setPlayerId, setRoom, addPlayer, addToast, updatePlayerVoted, revealVotes, storeResetVotes, spawnPaperBall]);
+  }, [socket, roomId, playerName, savedPlayerId, setPlayerName, setPlayerId, setRoom, addPlayer, addToast, updatePlayerVoted, revealVotes, storeResetVotes, spawnPaperBall, triggerCelebration]);
 
   const handleThrow = useCallback((toId: string) => {
     socket.emit("throw-paper", { roomId, fromId: currentPlayerId, toId });
@@ -134,7 +143,7 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
         setCountdown(null);
         socket.emit("reveal", { roomId });
       }
-    }, 1000);
+    }, 700);
   }, [countdown, socket, roomId]);
   const handleReset = () => {
     if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; setCountdown(null); }
@@ -338,6 +347,7 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
 
       <ToastContainer />
       <KonamiEasterEgg />
+      <FallingCardsOverlay active={celebrationActive} cards={celebrationCards} />
 
       {/* Theme selector */}
       <div className="fixed bottom-4 right-4 z-40 opacity-40 hover:opacity-100 transition-opacity">
@@ -347,26 +357,29 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
   );
 }
 
-export function RoomView(props: Props) {
-  const [themeId, setThemeId] = useState<ThemeId>(() => {
-    if (typeof window === "undefined") return "openclimat";
-    const saved = localStorage.getItem("poker-planning-theme") as ThemeId | null;
-    return saved && saved in THEMES ? saved : "openclimat";
-  });
+function subscribeThemeStorage(callback: () => void) {
+  const handler = (e: StorageEvent) => {
+    if (e.key === "poker-planning-theme") callback();
+  };
+  window.addEventListener("storage", handler);
+  return () => window.removeEventListener("storage", handler);
+}
 
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === "poker-planning-theme" && e.newValue && e.newValue in THEMES) {
-        setThemeId(e.newValue as ThemeId);
-      }
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
+export function RoomView(props: Props) {
+  const storedTheme = useSyncExternalStore(
+    subscribeThemeStorage,
+    () => {
+      const saved = localStorage.getItem("poker-planning-theme") as ThemeId | null;
+      return saved && saved in THEMES ? saved : "openclimat";
+    },
+    () => "openclimat" as ThemeId
+  );
+  const [themeOverride, setThemeOverride] = useState<ThemeId | null>(null);
+  const themeId = themeOverride ?? storedTheme;
 
   return (
     <ThemeProvider themeId={themeId}>
-      <RoomViewInner {...props} onChangeTheme={setThemeId} />
+      <RoomViewInner {...props} onChangeTheme={setThemeOverride} />
     </ThemeProvider>
   );
 }

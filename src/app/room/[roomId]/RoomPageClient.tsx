@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { RoomView } from "@/components/RoomView";
 
@@ -8,19 +8,23 @@ interface Props {
   paramsPromise: Promise<{ roomId: string }>;
 }
 
+const noopSubscribe = () => () => {};
+
 export default function RoomPageClient({ paramsPromise }: Props) {
   const { roomId } = use(paramsPromise);
   const router = useRouter();
 
-  const [playerName] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("planning-poker-player-name");
-  });
+  const playerName = useSyncExternalStore(
+    noopSubscribe,
+    () => localStorage.getItem("planning-poker-player-name"),
+    () => null
+  );
 
-  const [savedPlayerId] = useState<string | undefined>(() => {
-    if (typeof window === "undefined") return undefined;
-    return localStorage.getItem(`planning-poker-player-id:${roomId}`) || undefined;
-  });
+  const savedPlayerId = useSyncExternalStore(
+    noopSubscribe,
+    () => localStorage.getItem(`planning-poker-player-id:${roomId}`) || undefined,
+    () => undefined
+  );
 
   useEffect(() => {
     if (!playerName) {
