@@ -1,16 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { connectSocket } from "@/lib/socket";
 import { useRoomStore } from "@/store/useRoomStore";
 
-export default function HomePage() {
+function HomePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setPlayerId, setPlayerName } = useRoomStore();
-  const [name, setName] = useState("");
+  const [name, setName] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem("planning-poker-player-name") || "";
+  });
   const [joinCode, setJoinCode] = useState(() => {
     const room = searchParams.get("room");
     return room ? room.toUpperCase() : "";
@@ -20,11 +23,6 @@ export default function HomePage() {
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    const saved = localStorage.getItem("planning-poker-player-name");
-    if (saved) setName(saved); // eslint-disable-line react-hooks/set-state-in-effect -- localStorage read on mount
-  }, []);
 
   function handleCreate() {
     if (!name.trim()) return;
@@ -149,5 +147,13 @@ export default function HomePage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense>
+      <HomePageInner />
+    </Suspense>
   );
 }

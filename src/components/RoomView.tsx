@@ -101,7 +101,7 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
       socket.off("kicked"); socket.off("error"); socket.off("paper-thrown");
       socket.off("connect", joinRoom);
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- mount-only: socket listeners registered once
+  }, [socket, roomId, playerName, savedPlayerId, setPlayerName, setPlayerId, setRoom, addPlayer, addToast, updatePlayerVoted, revealVotes, storeResetVotes, spawnPaperBall]);
 
   const handleThrow = useCallback((toId: string) => {
     socket.emit("throw-paper", { roomId, fromId: currentPlayerId, toId });
@@ -325,12 +325,13 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
 }
 
 export function RoomView(props: Props) {
-  const [themeId, setThemeId] = useState<ThemeId>("openclimat");
+  const [themeId, setThemeId] = useState<ThemeId>(() => {
+    if (typeof window === "undefined") return "openclimat";
+    const saved = localStorage.getItem("poker-planning-theme") as ThemeId | null;
+    return saved && saved in THEMES ? saved : "openclimat";
+  });
 
   useEffect(() => {
-    const saved = localStorage.getItem("poker-planning-theme") as ThemeId | null;
-    if (saved && saved in THEMES) setThemeId(saved); // eslint-disable-line react-hooks/set-state-in-effect -- localStorage read on mount
-
     const onStorage = (e: StorageEvent) => {
       if (e.key === "poker-planning-theme" && e.newValue && e.newValue in THEMES) {
         setThemeId(e.newValue as ThemeId);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useMemo } from "react";
+import { useRef, useEffect, useMemo, useState, useCallback } from "react";
 import type React from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
@@ -46,15 +46,19 @@ function DraggableGroup({
   children,
   onFlip,
   isFlipping,
+  onCursorChange,
 }: {
   children: React.ReactNode;
   onFlip: () => void;
   isFlipping: React.MutableRefObject<boolean>;
+  onCursorChange: (cursor: string) => void;
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const { gl } = useThree();
   const onFlipRef = useRef(onFlip);
   useEffect(() => { onFlipRef.current = onFlip; });
+  const onCursorChangeRef = useRef(onCursorChange);
+  useEffect(() => { onCursorChangeRef.current = onCursorChange; });
 
   const drag = useRef({
     active: false,
@@ -66,7 +70,6 @@ function DraggableGroup({
 
   useEffect(() => {
     const el = gl.domElement;
-    el.style.cursor = "grab"; // eslint-disable-line react-hooks/immutability -- DOM side-effect is intentional
 
     const onDown = (e: PointerEvent) => {
       drag.current = {
@@ -77,7 +80,7 @@ function DraggableGroup({
         totalMoved: 0,
         angVelX: 0, angVelY: 0,
       };
-      el.style.cursor = "grabbing";
+      onCursorChangeRef.current("grabbing");
       el.setPointerCapture(e.pointerId);
     };
 
@@ -99,7 +102,7 @@ function DraggableGroup({
     const onUp = () => {
       if (!drag.current.active) return;
       drag.current.active = false;
-      el.style.cursor = "grab";
+      onCursorChangeRef.current("grab");
 
       const speed = Math.hypot(drag.current.lastDx, drag.current.lastDy);
       const isClick = drag.current.totalMoved < 6;
@@ -124,7 +127,6 @@ function DraggableGroup({
       el.removeEventListener("pointermove", onMove);
       el.removeEventListener("pointerup", onUp);
       el.removeEventListener("pointercancel", onUp);
-      el.style.cursor = "";
     };
   }, [gl, isFlipping]);
 
@@ -229,13 +231,16 @@ export function CoinCanvas({
   const isFlippingRef = useRef(isFlipping);
   useEffect(() => { isFlippingRef.current = isFlipping; }, [isFlipping]);
 
+  const [cursor, setCursor] = useState("grab");
+  const handleCursorChange = useCallback((c: string) => setCursor(c), []);
+
   return (
-    <Canvas camera={{ position: [0, 0, 2.8], fov: 44 }} gl={{ antialias: true, alpha: true }} style={{ background: "transparent" }}>
+    <Canvas camera={{ position: [0, 0, 2.8], fov: 44 }} gl={{ antialias: true, alpha: true }} style={{ background: "transparent", cursor }}>
       <directionalLight position={[4, 6, 5]} intensity={2.4} color="#fff6d8" />
       <pointLight position={[-4, 2, 3]} intensity={0.9} color="#c8d8ff" />
       <pointLight position={[1, -4, 2]} intensity={0.5} color="#f0a040" />
       <ambientLight intensity={0.35} />
-      <DraggableGroup onFlip={onFlip} isFlipping={isFlippingRef}>
+      <DraggableGroup onFlip={onFlip} isFlipping={isFlippingRef} onCursorChange={handleCursorChange}>
         <Coin targetAngle={targetAngle} onComplete={onComplete} />
       </DraggableGroup>
     </Canvas>

@@ -12,28 +12,30 @@ export default function RoomPageClient({ paramsPromise }: Props) {
   const { roomId } = use(paramsPromise);
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [playerName, setPlayerName] = useState<string | null>(null);
-  const [savedPlayerId, setSavedPlayerId] = useState<string | undefined>();
+
+  const nameFromQuery = searchParams.get("name");
+
+  const [playerName] = useState<string | null>(() => {
+    const nameFromStorage = typeof window !== "undefined"
+      ? localStorage.getItem("planning-poker-player-name")
+      : null;
+    return nameFromQuery || nameFromStorage;
+  });
+
+  const [savedPlayerId] = useState<string | undefined>(() => {
+    if (typeof window === "undefined") return undefined;
+    return localStorage.getItem(`planning-poker-player-id:${roomId}`) || undefined;
+  });
 
   useEffect(() => {
-    const nameFromQuery = searchParams.get("name");
-    const nameFromStorage = localStorage.getItem("planning-poker-player-name");
-    const pidFromStorage = localStorage.getItem(`planning-poker-player-id:${roomId}`);
-
-    const name = nameFromQuery || nameFromStorage;
-    if (!name) {
-      // Redirect to lobby with room pre-fill
+    if (!playerName) {
       router.replace(`/?room=${roomId}`);
       return;
     }
-
-    setPlayerName(name); // eslint-disable-line react-hooks/set-state-in-effect -- localStorage read on mount
-    if (pidFromStorage) setSavedPlayerId(pidFromStorage);
-
     if (nameFromQuery) {
       localStorage.setItem("planning-poker-player-name", nameFromQuery);
     }
-  }, [roomId, searchParams, router]);
+  }, [playerName, roomId, nameFromQuery, router]);
 
   if (!playerName) {
     return (
