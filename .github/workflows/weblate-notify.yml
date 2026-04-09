@@ -1,0 +1,17 @@
+name: Notify Weblate on translation changes
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "public/locales/**"
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Weblate repository sync
+        run: |
+          curl --fail -X POST "${{ secrets.WEBLATE_HOOK_URL }}"
+        # WEBLATE_HOOK_URL format: http(s)://<weblate-host>/hooks/github/
+        # Add it in: GitHub repo Settings > Secrets and variables > Actions
