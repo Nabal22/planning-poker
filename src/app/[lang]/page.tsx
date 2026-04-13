@@ -65,15 +65,13 @@ export default async function LandingPage({ params }: PageProps<"/[lang]">) {
         </section>
 
         {/* Stats */}
-        {"stats" in landing && (
-          <section className="px-6 py-12 border-t border-gray-800 bg-gray-900/30">
-            <div className="max-w-3xl mx-auto grid grid-cols-3 gap-8 text-center">
-              <StatItem value="1 200+" label={(landing as typeof landing & { stats: { sessions: string } }).stats.sessions} />
-              <StatItem value="340+" label={(landing as typeof landing & { stats: { teams: string } }).stats.teams} />
-              <StatItem value="48 000+" label={(landing as typeof landing & { stats: { tickets: string } }).stats.tickets} />
-            </div>
-          </section>
-        )}
+        <section className="px-6 py-12 border-t border-gray-800 bg-gray-900/30">
+          <div className="max-w-3xl mx-auto grid grid-cols-3 gap-8 text-center">
+            <StatItem value="1 200+" label={landing.stats.sessions} />
+            <StatItem value="340+" label={landing.stats.teams} />
+            <StatItem value="48 000+" label={landing.stats.tickets} />
+          </div>
+        </section>
 
         {/* Features */}
         <section className="px-6 py-16 border-t border-gray-800">
@@ -130,6 +128,15 @@ export default async function LandingPage({ params }: PageProps<"/[lang]">) {
       <footer className="border-t border-gray-800 px-6 py-4 text-center text-sm text-gray-600">
         © {new Date().getFullYear()} Poker Planning
       </footer>
+    </div>
+  );
+}
+
+function StatItem({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="space-y-1">
+      <div className="text-3xl font-bold text-white">{value}</div>
+      <div className="text-sm text-gray-400">{label}</div>
     </div>
   );
 }

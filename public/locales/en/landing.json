@@ -34,6 +34,11 @@
       "description": "Estimate your tickets in real time and reach consensus."
     }
   },
+  "stats": {
+    "sessions": "",
+    "teams": "",
+    "tickets": ""
+  },
   "finalCta": {
     "title": "Ready to estimate?",
     "cta": "Get started now"
