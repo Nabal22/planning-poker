@@ -3,7 +3,7 @@ format_version: 1
 project:
   name: planning-poker
   slug: planning-poker
-  web: https://github.com/Nabal22/planning-poker
+  web: https://github.com/Nabal22/poker-planning
 
 # Component Discovery — Weblate auto-detects these 3 components on import.
 # Source language: French (fr) — default locale of the project.
