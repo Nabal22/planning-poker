@@ -1,0 +1,33 @@
+format_version: 1
+
+project:
+  name: planning-poker
+  slug: planning-poker
+  web: https://github.com/Nabal22/poker-planning
+
+# Component Discovery — Weblate auto-detects these 3 components on import.
+# Source language: French (fr) — default locale of the project.
+# Target language: English (en).
+# File format: JSON nested (supports dot-notation keys).
+
+discovery:
+  - file_format: json-nested
+    filemask: public/locales/*/landing.json
+    new_base: public/locales/fr/landing.json
+    name: landing
+    slug: landing
+    license: proprietary
+
+  - file_format: json-nested
+    filemask: public/locales/*/common.json
+    new_base: public/locales/fr/common.json
+    name: common
+    slug: common
+    license: proprietary
+
+  - file_format: json-nested
+    filemask: public/locales/*/app.json
+    new_base: public/locales/fr/app.json
+    name: app
+    slug: app
+    license: proprietary

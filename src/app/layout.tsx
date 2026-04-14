@@ -32,7 +32,7 @@ const xpFont = Inter({
 
 export const metadata: Metadata = {
   title: "Poker Planning",
-  description: "Estimez vos tickets Jira en équipe",
+  description: "Estimate your Jira tickets as a team.",
   icons: {
     icon: "/icon.png",
     apple: "/apple-icon.png",
@@ -46,7 +46,6 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="fr"
       className={`${inter.variable} ${pressStart2P.variable} ${vt323.variable} ${pixelifySans.variable} ${xpFont.variable} h-full antialiased dark`}
     >
       <body className="min-h-full flex flex-col bg-gray-950 font-[family-name:var(--font-inter)]">{children}</body>
