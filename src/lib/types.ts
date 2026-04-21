@@ -49,6 +49,7 @@ export type ClientToServerEvents = {
   "set-final-score": (data: { roomId: string; score: string }) => void;
   "change-scale": (data: { roomId: string; scale: Scale }) => void;
   "load-tickets": (data: { roomId: string; tickets: JiraTicket[] }) => void;
+  "update-ticket-estimate": (data: { roomId: string; ticketIdx: number; score: string }) => void;
   "add-ticket": (data: { roomId: string; ticket: JiraTicket }) => void;
   "remove-ticket": (data: { roomId: string; ticketIdx: number }) => void;
   "kick-player": (data: { roomId: string; playerId: string }) => void;

@@ -51,7 +51,7 @@ export function PokerTable({ room, currentPlayerId, countdown, onKick, onThrow, 
       </div>
 
       {/* Table felt */}
-      <div className={`relative w-72 h-24 rounded-full flex flex-col items-center justify-center gap-1 ${theme.table.felt}`}>
+      <div className={`relative w-72 h-24 xl:w-96 xl:h-28 2xl:w-[28rem] 2xl:h-32 rounded-full flex flex-col items-center justify-center gap-1 ${theme.table.felt}`}>
         {countdown !== null ? (
           <span
             key={countdown}

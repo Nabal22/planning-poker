@@ -190,9 +190,7 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
     setSendingToJira(false);
     if (res.error) { addToast(res.error, "error"); return; }
     addToast(`${ticket.key} mis à jour dans Jira`, "success");
-    const updatedTickets = [...room.tickets];
-    updatedTickets[room.currentTicketIdx] = { ...ticket, estimatedPoints: score };
-    socket.emit("load-tickets", { roomId, tickets: updatedTickets });
+    socket.emit("update-ticket-estimate", { roomId, ticketIdx: room.currentTicketIdx, score });
     setTimeout(() => socket.emit("next-ticket", { roomId }), 1500);
   };
 
@@ -221,8 +219,8 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
   return (
     <div className={`min-h-screen ${theme.page} ${theme.font}`}>
       {/* Header */}
-      <header className={`border-b ${theme.headerBorder} ${theme.header} sticky top-0 z-10 px-4 py-3`}>
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
+      <header className={`border-b ${theme.headerBorder} ${theme.header} sticky top-0 z-10 px-4 xl:px-8 2xl:px-12 py-3`}>
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <Image src="/logo.png" alt="Logo" width={28} height={28} className="h-7 w-7" />
@@ -261,8 +259,8 @@ function RoomViewInner({ roomId, playerName, savedPlayerId, onChangeTheme }: Pro
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-4 py-6 pb-20 lg:pb-6">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
+      <div className="px-4 py-6 pb-20 lg:pb-6 xl:px-8 2xl:px-12">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px] xl:grid-cols-[1fr_360px] 2xl:grid-cols-[1fr_420px]">
           {/* Main */}
           <div className="space-y-6">
             <PokerTable

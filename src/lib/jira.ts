@@ -205,17 +205,79 @@ export async function updateStoryPoints(
   }
 }
 
+type AdfNode = {
+  type: string;
+  text?: string;
+  content?: AdfNode[];
+  attrs?: Record<string, unknown>;
+};
+
+function inlineText(nodes: AdfNode[]): string {
+  return nodes
+    .map((n) => {
+      if (n.type === "text") return n.text ?? "";
+      if (n.type === "hardBreak") return "\n";
+      if (n.content) return inlineText(n.content);
+      return "";
+    })
+    .join("");
+}
+
+function processBlock(block: AdfNode, listDepth = 0, bulletType?: "bullet" | "ordered", idx = 0): string[] {
+  const lines: string[] = [];
+  const indent = "  ".repeat(listDepth);
+
+  switch (block.type) {
+    case "paragraph": {
+      const text = inlineText(block.content ?? []);
+      if (text.trim()) lines.push(text);
+      break;
+    }
+    case "heading": {
+      const text = inlineText(block.content ?? []);
+      if (text.trim()) lines.push(text);
+      break;
+    }
+    case "bulletList":
+      (block.content ?? []).forEach((item) => lines.push(...processBlock(item, listDepth, "bullet")));
+      break;
+    case "orderedList":
+      (block.content ?? []).forEach((item, i) => lines.push(...processBlock(item, listDepth, "ordered", i + 1)));
+      break;
+    case "listItem": {
+      const prefix = bulletType === "ordered" ? `${idx}. ` : "• ";
+      const paragraphs = (block.content ?? []).filter((b) => b.type === "paragraph" || b.type === "heading");
+      const nested = (block.content ?? []).filter((b) => b.type === "bulletList" || b.type === "orderedList");
+      const text = paragraphs.map((p) => inlineText(p.content ?? [])).join(" ").trim();
+      if (text) lines.push(`${indent}${prefix}${text}`);
+      nested.forEach((n) => lines.push(...processBlock(n, listDepth + 1)));
+      break;
+    }
+    case "codeBlock": {
+      const text = inlineText(block.content ?? []);
+      if (text.trim()) lines.push(text);
+      break;
+    }
+    case "blockquote":
+      (block.content ?? []).forEach((b) => lines.push(...processBlock(b)));
+      break;
+    case "rule":
+      lines.push("───");
+      break;
+  }
+
+  return lines;
+}
+
 function extractPlainText(doc: unknown): string | undefined {
   if (!doc) return undefined;
-  if (typeof doc === "string") return doc;
-  const adf = doc as { content?: Array<{ content?: Array<{ text?: string }> }> };
+  if (typeof doc === "string") return doc || undefined;
+  const adf = doc as { content?: AdfNode[] };
+  if (!adf.content) return undefined;
   try {
-    return adf.content
-      ?.flatMap((block) => block.content ?? [])
-      .map((node) => node.text ?? "")
-      .join(" ")
-      .trim()
-      .slice(0, 500);
+    const lines = adf.content.flatMap((block) => processBlock(block));
+    const result = lines.join("\n").trim();
+    return result || undefined;
   } catch {
     return undefined;
   }

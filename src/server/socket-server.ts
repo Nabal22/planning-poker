@@ -104,6 +104,12 @@ export function initSocketServer(httpServer: HttpServer) {
       io!.to(roomId).emit("room-state", room);
     });
 
+    socket.on("update-ticket-estimate", ({ roomId, ticketIdx, score }) => {
+      const room = rm.updateTicketEstimate(roomId, ticketIdx, score);
+      if (!room) return;
+      io!.to(roomId).emit("room-state", room);
+    });
+
     socket.on("add-ticket", ({ roomId, ticket }) => {
       const room = rm.addTicket(roomId, ticket);
       if (!room) return;

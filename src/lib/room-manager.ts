@@ -206,6 +206,14 @@ export function removeTicket(roomId: string, ticketIdx: number): Room | null {
   return room;
 }
 
+export function updateTicketEstimate(roomId: string, ticketIdx: number, score: string): Room | null {
+  const room = rooms.get(roomId);
+  if (!room || !room.tickets[ticketIdx]) return null;
+  room.tickets[ticketIdx].estimatedPoints = score;
+  room.lastActivityAt = Date.now();
+  return room;
+}
+
 export function markTicketEstimated(roomId: string, ticketIdx: number, score: string): void {
   const room = rooms.get(roomId);
   if (!room || !room.tickets[ticketIdx]) return;

@@ -50,7 +50,9 @@ export function TicketDetail({ ticket, ticketIdx, totalTickets }: Props) {
       {expanded && (
         <div className={`px-4 pb-4 pt-2 space-y-3 border-t border-current/10 ${theme.panelInner}`}>
           {ticket.description && (
-            <p className="text-xs opacity-60 leading-relaxed">{ticket.description}</p>
+            <pre className="text-xs opacity-60 leading-relaxed whitespace-pre-wrap break-words max-h-64 overflow-y-auto" style={{ fontFamily: "inherit" }}>
+              {ticket.description}
+            </pre>
           )}
 
           <div className="flex items-center gap-3 flex-wrap">
