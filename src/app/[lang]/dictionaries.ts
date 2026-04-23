@@ -29,9 +29,6 @@ export function hasLocale(locale: string): locale is Locale {
   return locale in dictionaries;
 }
 
-export async function getDictionary<N extends keyof typeof dictionaries["fr"]>(
-  locale: Locale,
-  namespace: N
-): Promise<Awaited<ReturnType<typeof dictionaries["fr"][N]>>> {
-  return dictionaries[locale][namespace]() as Promise<Awaited<ReturnType<typeof dictionaries["fr"][N]>>>;
+export async function getDictionary(locale: Locale, namespace: keyof (typeof dictionaries)[Locale]) {
+  return dictionaries[locale][namespace]();
 }
