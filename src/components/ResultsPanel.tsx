@@ -84,20 +84,25 @@ export function ResultsPanel({ room, isHost, onSetFinalScore, onResetVotes, onNe
         </>
       )}
 
-      {/* Score final — host picks */}
-      {isHost && !room.finalScore && (
+      {/* Score final — host picks (toujours affiché, le sélectionné est mis en avant) */}
+      {isHost && (
         <div className="space-y-2">
           <p className="text-xs opacity-50 font-medium uppercase tracking-wide text-center">Score final</p>
           <div className="flex flex-wrap gap-1.5 justify-center">
-            {scaleValues.map((v) => (
-              <button
-                key={v}
-                onClick={() => onSetFinalScore(v)}
-                className={`h-10 w-10 rounded-xl text-sm font-bold transition-all ${theme.scoreBtn} ${theme.scoreBtnHover}`}
-              >
-                {v}
-              </button>
-            ))}
+            {scaleValues.map((v) => {
+              const isSelected = room.finalScore === v;
+              return (
+                <button
+                  key={v}
+                  onClick={() => onSetFinalScore(v)}
+                  className={`h-10 w-10 rounded-xl text-sm font-bold transition-all ${
+                    isSelected ? theme.vote.selected : `${theme.scoreBtn} ${theme.scoreBtnHover}`
+                  }`}
+                >
+                  {v}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
