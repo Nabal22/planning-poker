@@ -42,7 +42,7 @@ export function LoginClient() {
           <p className="text-gray-400 text-sm">Entrez le code d&apos;accès</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
           <input
             type="password"
             className="w-full rounded-xl bg-gray-800 border border-gray-700 px-4 py-3 text-white placeholder-gray-500 focus:border-indigo-500 focus:outline-none transition-colors text-center tracking-widest"
